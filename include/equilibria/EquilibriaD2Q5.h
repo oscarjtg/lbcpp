@@ -49,10 +49,12 @@ inline T D2Q5_2ndOrder_Feq0(T r_, T u2)
     return r_ * (2 - 3*u2) / 6;
 }
 
+/*
 template<class T>
 inline T D2Q5_2ndOrder_Feq1(T r_, T u_, T u2)
 {
     return r_ * ()
 }
+*/
 
 #endif // EQUILIBRIAD2Q5DEF
