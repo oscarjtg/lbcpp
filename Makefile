@@ -1,5 +1,5 @@
 # Compiler
-CXX = g++
+CXX = mpic++
 
 # Compiler flags
 CXXFLAGS = -Wall -Wextra -Iinclude -I/usr/include/gtest -pthread

@@ -15,6 +15,24 @@ public:
     T GetF6(int i, int j) const;
     T GetF7(int i, int j) const;
     T GetF8(int i, int j) const;
+    T GetPreStreamF0(int i, int j) const;
+    T GetPreStreamF1(int i, int j) const;
+    T GetPreStreamF2(int i, int j) const;
+    T GetPreStreamF3(int i, int j) const;
+    T GetPreStreamF4(int i, int j) const;
+    T GetPreStreamF5(int i, int j) const;
+    T GetPreStreamF6(int i, int j) const;
+    T GetPreStreamF7(int i, int j) const;
+    T GetPreStreamF8(int i, int j) const;
+    T GetBouncedF0(int i, int j) const;
+    T GetBouncedF1(int i, int j) const;
+    T GetBouncedF2(int i, int j) const;
+    T GetBouncedF3(int i, int j) const;
+    T GetBouncedF4(int i, int j) const;
+    T GetBouncedF5(int i, int j) const;
+    T GetBouncedF6(int i, int j) const;
+    T GetBouncedF7(int i, int j) const;
+    T GetBouncedF8(int i, int j) const;
     void SetF0(T f_, int i, int j);
     void SetF1(T f_, int i, int j);
     void SetF2(T f_, int i, int j);
@@ -37,6 +55,7 @@ public:
     void SwapPointers();
     void DisplayPointerInfo() const;
     void DisplayInfo() const;
+    void WriteToCSV(const std::string& path, const char letter, const std::string& runId = "test", const int timestep = 0) const;
 private:
     const int mSizeX;
     const int mSizeY;
@@ -54,6 +73,8 @@ private:
     {
         return i + mSizeX * j;
     }
+    std::string construct_basepath(const std::string& path, const std::string& runId, const int timestep, const char letter) const;
+    void write_csv(const std::string& path, T (LatticeD2Q9<T>::*get_func)(int, int) const) const;
 };
 
 #endif // LATTICED2Q9DEF

@@ -1,6 +1,16 @@
 #include <iostream>
+#include <fstream>
+#include <string>
+#include <iomanip> // For std::setw and std::setfill
+#include <sstream> // For std::ostringstream
 
 #include "macroscopic/Macroscopic2D.h"
+
+/**********************************************
+ * 
+ *  Public member function definitions.
+ * 
+ **********************************************/
 
 /**
  * @brief Overridden constructor. Allocates memory for macroscopic arrays.
@@ -166,6 +176,81 @@ void Macroscopic2D<T>::SetSalinity(T s_, int i, int j)
     mpT[scalar_index(i, j)] = s_;
 }
 
+/**
+ * @brief Write the macroscopic data to CSV files with optional runId and timestep.
+ * 
+ * @param path The string path to the directory where the CSV files will be saved.
+ * @param runId An optional string identifier for the run. Default is an empty string.
+ * @param timestep An optional integer representing the timestep. Default is 0.
+ */
+template<class T>
+void Macroscopic2D<T>::WriteToCSV(const std::string& path, const std::string& runId, const int timestep) const {
+
+    // Construct base file paths with runId and timestep
+    std::string basepath = construct_basepath(path, runId, timestep);
+
+    // Write each data array to its respective CSV file
+    write_csv(basepath + "_r.csv", &Macroscopic2D<T>::GetDensity);
+    write_csv(basepath + "_u.csv", &Macroscopic2D<T>::GetVelocityX);
+    write_csv(basepath + "_v.csv", &Macroscopic2D<T>::GetVelocityY);
+    write_csv(basepath + "_t.csv", &Macroscopic2D<T>::GetTemperature);
+    write_csv(basepath + "_s.csv", &Macroscopic2D<T>::GetSalinity);
+}
+
+
+/**********************************************
+ * 
+ *  Private member function definitions.
+ * 
+ **********************************************/
+
+/**
+ * @brief Construct the file name from path, runid, and timestep.
+ * 
+ * @param path The string path to the directory where the CSV files will be saved.
+ * @param runId An optional string identifier for the run. Default is an empty string.
+ * @param timestep An optional integer representing the timestep. Default is 0.
+ * @return string basepath.
+ */
+ template<class T>
+std::string Macroscopic2D<T>::construct_basepath(const std::string& path, const std::string& runId, const int timestep) const
+{
+    std::ostringstream oss;
+    oss << path << "/" << runId << "_timestep" << std::setw(9) << std::setfill('0') << timestep;
+    return oss.str();
+}
+
+/**
+ * @brief Write a given array to a file at a given path.
+ *
+ * @param path The path of the file (directory & filename).
+ * @param mPtr Pointer to the array to be saved.
+ */
+ template<class T>
+void Macroscopic2D<T>::write_csv(const std::string& path, T (Macroscopic2D<T>::*get_func)(int, int) const) const
+{
+    std::ofstream file(path);
+    if (file.is_open()) 
+    {
+        for (int j = 0; j < mSizeY; ++j) 
+        {
+            for (int i = 0; i < mSizeX; ++i) 
+            {
+                file << (this->*get_func)(i, j);
+                if (i < mSizeX - 1) 
+                {
+                    file << ",";
+                }
+            }
+            file << "\n";
+        }
+        file.close();
+    } 
+    else 
+    {
+        throw std::runtime_error("Unable to open file: " + path);
+    }
+}
 
 
 // Explicit template instantiation.
