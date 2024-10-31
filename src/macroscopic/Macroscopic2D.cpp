@@ -184,10 +184,10 @@ void Macroscopic2D<T>::SetSalinity(T s_, int i, int j)
  * @param timestep An optional integer representing the timestep. Default is 0.
  */
 template<class T>
-void Macroscopic2D<T>::WriteToCSV(const std::string& path, const std::string& runId, const int timestep) const {
+void Macroscopic2D<T>::WriteToCSV(const std::string& path, const std::string& runId, const int timestep, const int process_number) const {
 
     // Construct base file paths with runId and timestep
-    std::string basepath = construct_basepath(path, runId, timestep);
+    std::string basepath = construct_basepath(path, runId, timestep, process_number);
 
     // Write each data array to its respective CSV file
     write_csv(basepath + "_r.csv", &Macroscopic2D<T>::GetDensity);
@@ -213,10 +213,10 @@ void Macroscopic2D<T>::WriteToCSV(const std::string& path, const std::string& ru
  * @return string basepath.
  */
  template<class T>
-std::string Macroscopic2D<T>::construct_basepath(const std::string& path, const std::string& runId, const int timestep) const
+std::string Macroscopic2D<T>::construct_basepath(const std::string& path, const std::string& runId, const int timestep, const int process_number) const
 {
     std::ostringstream oss;
-    oss << path << "/" << runId << "_timestep" << std::setw(9) << std::setfill('0') << timestep;
+    oss << path << "/" << runId << "_p" << std::setw(3) << std::setfill('0') << process_number << "_t" << std::setw(9) << std::setfill('0') << timestep;
     return oss.str();
 }
 

@@ -31,5 +31,13 @@
 *.out
 *.app
 
+# Junk files
+include/matrix/Matrix.h
+src/matrix/Matrix.cpp
+
 # Output files
 *.csv
+*.txt
+
+# Python
+plotenv/

@@ -41,7 +41,7 @@ inline T computeSecondOrderDeviationEquilibrium(
     T velocityMagnitudeSquared,
     T latticeWeight)
 {
-    return density * latticeWeight * (static_cast<T>(3.0) * velocityProjection + static_cast<T>(4.5) * velocityProjection * velocityProjection - static_cast<T>(1.5) * velocityMagnitudeSquared) + densityAnomaly * latticeWeight;
+    return density * latticeWeight * (static_cast<T>(4.5) * velocityProjection * velocityProjection - static_cast<T>(1.5) * velocityMagnitudeSquared + static_cast<T>(3.0) * velocityProjection) + densityAnomaly * latticeWeight;
 }
 
 

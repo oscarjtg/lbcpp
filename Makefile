@@ -2,7 +2,7 @@
 CXX = mpic++
 
 # Compiler flags
-CXXFLAGS = -Wall -Wextra -Iinclude -I/usr/include/gtest -pthread
+CXXFLAGS = -Wall -Wextra -pedantic -Iinclude -I/usr/include/gtest -pthread
 
 # Directories
 SRC_DIR = src

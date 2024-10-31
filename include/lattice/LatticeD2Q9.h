@@ -55,7 +55,7 @@ public:
     void SwapPointers();
     void DisplayPointerInfo() const;
     void DisplayInfo() const;
-    void WriteToCSV(const std::string& path, const char letter, const std::string& runId = "test", const int timestep = 0) const;
+    void WriteToCSV(const std::string& path, const char letter, const std::string& runId = "test", const int timestep = 0, const int process_number = 0) const;
 private:
     const int mSizeX;
     const int mSizeY;
@@ -73,7 +73,7 @@ private:
     {
         return i + mSizeX * j;
     }
-    std::string construct_basepath(const std::string& path, const std::string& runId, const int timestep, const char letter) const;
+    std::string construct_basepath(const std::string& path, const std::string& runId, const int timestep, const char letter, const int process_number) const;
     void write_csv(const std::string& path, T (LatticeD2Q9<T>::*get_func)(int, int) const) const;
 };
 
