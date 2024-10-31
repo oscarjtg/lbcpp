@@ -38,6 +38,9 @@ src/matrix/Matrix.cpp
 # Output files
 *.csv
 *.txt
+*.png
+*.pdf
+*.svg
 
 # Python
 plotenv/
