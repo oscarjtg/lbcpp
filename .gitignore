@@ -43,4 +43,4 @@ src/matrix/Matrix.cpp
 *.svg
 
 # Python
-plotenv/
+venv/
