@@ -29,7 +29,7 @@ void MacroscopicVariable<T>::DisplayInfo() const
     std::cout << "Run ID:           " << mRunID << "\n";
     std::cout << "Process number    " << mProcessNumber << "\n";
     std::cout << "Grid dimensions:  ";
-    std::cout << mSizeX << "x " << mSizeY << " x " << mSizeZ << "\n";
+    std::cout << mSizeX << " x " << mSizeY << " x " << mSizeZ << "\n";
     std::cout << "Saving to:        " << mSaveDirectory << "\n";
     std::cout << "--------------------------------------------\n";
 }

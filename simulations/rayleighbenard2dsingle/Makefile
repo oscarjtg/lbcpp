@@ -5,7 +5,7 @@ CXX = g++
 CXXWARN = -Wall -Wextra -Wpedantic -Werror
 
 # Compiler optimisation flags
-CXXOPT = -O
+CXXOPT = -g
 
 # Paths to header, source, and object files.
 INCLUDE_PATH = ../../include
@@ -40,7 +40,7 @@ $(TARGET): $(TARGET).o $(OBJS)
 
 # Clean up
 clean:
-	rm -rf $(OBJ_PATH)/*.o $(TARGET)
+	rm -rf $(OBJS) $(TARGET) $(TARGET).o
 
 # Phony targets
 .PHONY: all clean

@@ -2,7 +2,10 @@
 #include <cstdlib> // for atof and exit
 #include <iostream> // for cout
 
-#include "lattice/LatticeStructOfArr.h"
+#include "domain/BoundaryInfo.h"
+#include "domain/NodeInfo.h"
+#include "evolver/ScalarEvolverSRT.h"
+#include "lattice/LatticeSoAPull.h"
 #include "macroscopic/MacroscopicVariable.h"
 
 void getInputParameters(double& rayleigh_number, double& prandtl_number, int& nx, int& ny, int& nt, int argc, char* argv[]);
@@ -38,12 +41,16 @@ int main(int argc, char* argv[])
 
     // Initialise arrays.
     const int nd = 2, nq_f = 9, nq_g = 5; // Set LB lattice model type.
-    LatticeStructOfArr<double> f(nx, ny, nz, nd, nq_f, "f", run_id, save_path);
-    LatticeStructOfArr<double> g(nx, ny, nz, nd, nq_g, "g", run_id, save_path);
+    LatticeSoAPull<double> f(nx, ny, nz, nd, nq_f, "f", run_id, save_path);
+    LatticeSoAPull<double> g(nx, ny, nz, nd, nq_g, "g", run_id, save_path);
     MacroscopicVariable<double> dens(nx, ny, nz, "r", run_id, save_path);
     MacroscopicVariable<double> velx(nx, ny, nz, "u", run_id, save_path);
     MacroscopicVariable<double> vely(nx, ny, nz, "v", run_id, save_path);
+    MacroscopicVariable<double> velz(nx, ny, nz, "w", run_id, save_path);
     MacroscopicVariable<double> temp(nx, ny, nz, "t", run_id, save_path);
+    MacroscopicVariable<double> Fx(nx, ny, nz, "Fx", run_id, save_path);
+    MacroscopicVariable<double> Fy(nx, ny, nz, "Fy", run_id, save_path);
+    MacroscopicVariable<double> Fz(nx, ny, nz, "Fz", run_id, save_path);
 
     // Print info to terminal.
     f.DisplayLatticeParameters();
@@ -53,7 +60,39 @@ int main(int argc, char* argv[])
     vely.DisplayInfo();
     temp.DisplayInfo();
 
+    // Try swapping pointers.
+    f.StreamDistributions();
+    g.StreamDistributions();
+
+    // Save data.
+    std::cout << "Trying to save data\n";
+    f.WriteToTextFile();
+    dens.WriteToTextFile();
+
     std::cout << length_scale << thermal_diffusivity << "\n";
+
+    FluidEvolverSRT<double> fluid_evolver;
+    ScalarEvolverSRT<double> scalar_evolver;
+
+    BoundaryInfo bdry(2);
+    NodeInfo node(nx, ny, nz);
+
+    // Run algorithm.
+    for (int t = 0; t < nt; ++t)
+    {
+        // Perform one timestep of ADE LB algorithm for g using velocity u.
+        // This updates g and temp.
+        scalar_evolver.DoTimestep(g, temp, velx, vely, velz, node, bdry);
+
+        // Compute force density F from updated temp.
+        // TODO
+
+        // Perform one timestep of the standard LB algorithm for f using F.
+        // This updates f, dens, velx, vely, and velz.
+        fluid_evolver.DoTimestep(f, dens, velx, vely, velz, Fx, Fy, Fz, node, bdry);
+
+        // Compute diagnostic.
+    }
 }
 
 /***************************************************

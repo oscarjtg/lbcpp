@@ -34,6 +34,7 @@
 # Junk files
 include/matrix/Matrix.h
 src/matrix/Matrix.cpp
+*.cxx
 
 # Output files
 *.csv
