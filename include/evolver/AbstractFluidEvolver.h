@@ -1,0 +1,44 @@
+#ifndef ABSTRACTFLUIDEVOLVERDEF
+#define ABSTRACTFLUIDEVOLVERDEF
+
+#include "lattice/AbstractLattice.h"
+#include "macroscopic/MacroscopicVariable.h"
+#include "domain/BoundaryInfo.h"
+#include "domain/NodeInfo.h"
+
+template <class T>
+class AbstractFluidEvolver
+{
+public:
+    AbstractFluidEvolver() = default;
+
+    ~AbstractFluidEvolver() = default;
+
+    virtual void SetKinematicViscosity(T nu) = 0;
+
+    virtual void SetBulkViscosity(T eta) = 0;
+
+    virtual void Initialise(AbstractLattice<T>& f,
+                            const MacroscopicVariable<T>& dens,
+                            const MacroscopicVariable<T>& velx,
+                            const MacroscopicVariable<T>& vely,
+                            const MacroscopicVariable<T>& velz,
+                            const MacroscopicVariable<T>& Fx,
+                            const MacroscopicVariable<T>& Fy,
+                            const MacroscopicVariable<T>& Fz,
+                            const NodeInfo& node,
+                            const BoundaryInfo& bdry) = 0;
+
+    virtual void DoTimestep(AbstractLattice<T>& f,
+                            MacroscopicVariable<T>& dens,
+                            MacroscopicVariable<T>& velx,
+                            MacroscopicVariable<T>& vely,
+                            MacroscopicVariable<T>& velz,
+                            const MacroscopicVariable<T>& Fx,
+                            const MacroscopicVariable<T>& Fy,
+                            const MacroscopicVariable<T>& Fz,
+                            NodeInfo& node,
+                            BoundaryInfo& bdry) = 0;
+};
+
+#endif // ABSTRACTFLUIDEVOLVERDEF

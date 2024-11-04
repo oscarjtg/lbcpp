@@ -22,6 +22,42 @@ void MacroscopicVariable<T>::SetValue(T value, int i, int j, int k)
 }
 
 template <class T>
+void MacroscopicVariable<T>::SetLinearGradientZ(T bottom, T top)
+{
+    for (int k = 0; k < mSizeZ; ++k)
+    {
+        T value = bottom + k * (top - bottom) / (mSizeZ - 1);
+        for (int j = 0; j < mSizeY; ++j)
+        {
+            for (int i = 0; i < mSizeX; ++i)
+            {
+                this->SetValue(value, i, j, k);
+            }
+        }
+    }
+}
+
+template <class T>
+T MacroscopicVariable<T>::ComputeAverage() const
+{
+    double sum = 0.0;
+    int total = 0;
+    for (int k = 0; k < mSizeZ; ++k)
+    {
+        for (int j = 0; j < mSizeY; ++j)
+        {
+            for (int i = 0; i < mSizeX; ++i)
+            {
+                sum += static_cast<double>(this->GetValue(i, j, k));
+                total++;
+            }
+        }
+    }
+    double average = sum / static_cast<double>(total);
+    return static_cast<T>(average);
+}
+
+template <class T>
 void MacroscopicVariable<T>::DisplayInfo() const
 {   
     std::cout << "--------------------------------------------\n";
@@ -82,8 +118,3 @@ std::string MacroscopicVariable<T>::construct_basepath(const int timestep) const
     oss << mSaveDirectory << "/" << mRunID << "_p" << std::setw(3) << std::setfill('0') << mProcessNumber << "_t" << std::setw(9) << std::setfill('0') << timestep << "_" << mIDString;
     return oss.str();
 }
-
-// Explicit template instantiation.
-//template class MacroscopicVariable<_Float16>;
-template class MacroscopicVariable<float>;
-template class MacroscopicVariable<double>;

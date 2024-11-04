@@ -12,23 +12,23 @@ template <class T>
 AbstractLattice<T>::AbstractLattice(int size_x, int size_y, int size_z, int grid_size, int dims, int vels, std::string id_string, std::string run_id, std::string savepath, int proc_num)
     : mSizeX(size_x), mSizeY(size_y), mSizeZ(size_z), mGridSize(grid_size), mDims(dims), mVels(vels), mIDString(id_string), mRunID(run_id), mSaveDirectory(savepath), mProcessNumber(proc_num)
     {
-        if (dims == 2 && size_z != 1)
+        if (dims == 2 && size_y != 1)
         {
-            throw std::invalid_argument("Invalid size_z (number of grid points along z direction) for dims = 2 grid.");
+            throw std::invalid_argument("Invalid size_y (number of grid points along y direction) for dims = 2 grid. Should be 1.");
         }
         else if (dims == 2 && vels == 5)
         {
             mEX = {0, 1, 0, -1, 0};
-            mEY = {0, 0, 1, 0, -1};
-            mEZ = {0, 0, 0, 0, 0};
+            mEY = {0, 0, 0, 0, 0};
+            mEZ = {0, 0, 1, 0, -1};
             mW = {1./3., 1./6., 1./6., 1./6., 1./6.};
             mQRev = {0, 3, 4, 1, 2};
         }
         else if (dims == 2 && vels == 9)
         {
             mEX = {0, 1, 0, -1, 0, 1, -1, -1, 1};
-            mEY = {0, 0, 1, 0, -1, 1, 1, -1, -1};
-            mEZ = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+            mEY = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+            mEZ = {0, 0, 1, 0, -1, 1, 1, -1, -1};
             mW = {4./9., 1./9., 1./9., 1./9., 1./9., 1./36., 1./36., 1./36., 1./36.};
             mQRev = {0, 3, 4, 1, 2, 7, 8, 5, 6};
         }

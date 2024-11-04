@@ -2,10 +2,10 @@
 CXX = g++
 
 # Compiler warning flags
-CXXWARN = -Wall -Wextra -Wpedantic -Werror
+CXXWARN = -Wall -Wextra -Wpedantic #-Werror
 
 # Compiler optimisation flags
-CXXOPT = -g
+CXXOPT = -O3
 
 # Paths to header, source, and object files.
 INCLUDE_PATH = ../../include

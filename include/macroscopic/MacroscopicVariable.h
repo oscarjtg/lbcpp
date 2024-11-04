@@ -16,6 +16,10 @@ public:
 
     void SetValue(T value, int i, int j, int k);
 
+    void SetLinearGradientZ(T bottom, T top);
+
+    T ComputeAverage() const;
+
     void DisplayInfo() const;
 
     void WriteToTextFile(const int timestep = 0) const;
@@ -35,5 +39,7 @@ private:
 
     std::string construct_basepath(const int timestep) const;
 };
+
+#include "macroscopic/MacroscopicVariable.tpp"
 
 #endif // MACROSCOPICVARIABLEDEF
