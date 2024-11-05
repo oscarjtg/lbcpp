@@ -16,6 +16,10 @@ public:
 
     void SetValue(T value, int i, int j, int k);
 
+    void AddToValue(T additive_value, int i, int j, int k);
+
+    void SetToConstantValue(T value);
+
     void SetLinearGradientZ(T bottom, T top);
 
     T ComputeAverage() const;

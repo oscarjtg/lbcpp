@@ -18,101 +18,101 @@ public:
     void AddBoundaryRuleF(AbstractBoundaryRule<T>* bdry_rule, int bdry_id)
     {
         // Check that the bdry_id corresponds to the position of the new bdry_rule.
-        if (bdry_id == static_cast<int>(mArrayF.size()))
+        if (bdry_id == static_cast<int>(mBdryRuleArrF.size()))
         {
-            mArrayF.push_back(bdry_rule);
+            mBdryRuleArrF.push_back(bdry_rule);
         }
         else
         {
-            throw std::invalid_argument("Invalid bdry_id for setting new bdry_rule for mArrayF.");
+            throw std::invalid_argument("Invalid bdry_id for setting new bdry_rule for mBdryRuleArrF.");
         }
     }
 
     void AddBoundaryRuleG(AbstractBoundaryRule<T>* bdry_rule, int bdry_id)
     {
         // Check that the bdry_id corresponds to the position of the new bdry_rule.
-        if (bdry_id == static_cast<int>(mArrayG.size()))
+        if (bdry_id == static_cast<int>(mBdryRuleArrG.size()))
         {
-            mArrayG.push_back(bdry_rule);
+            mBdryRuleArrG.push_back(bdry_rule);
         }
         else
         {
-            throw std::invalid_argument("Invalid bdry_id for setting new bdry_rule for mArrayG.");
+            throw std::invalid_argument("Invalid bdry_id for setting new bdry_rule for mBdryRuleArrG.");
         }
     }
 
     void AddBoundaryRuleH(AbstractBoundaryRule<T>* bdry_rule, int bdry_id)
     {
         // Check that the bdry_id corresponds to the position of the new bdry_rule.
-        if (bdry_id >= 0 && bdry_id == static_cast<int>(mArrayH.size()))
+        if (bdry_id >= 0 && bdry_id == static_cast<int>(mBdryRuleArrH.size()))
         {
-            mArrayH.push_back(bdry_rule);
+            mBdryRuleArrH.push_back(bdry_rule);
         }
         else
         {
-            throw std::invalid_argument("Invalid bdry_id for setting new bdry_rule for mArrayH.");
+            throw std::invalid_argument("Invalid bdry_id for setting new bdry_rule for mBdryRuleArrH.");
         }
     }
 
     T ComputeBdryRuleF(int bdry_id, int q, int i, int j, int k) const
     {
-        if (bdry_id >= 0 && bdry_id < static_cast<int>(mArrayF.size()))
+        if (bdry_id >= 0 && bdry_id < static_cast<int>(mBdryRuleArrF.size()))
         {
-            return mArrayF[bdry_id]->GetDistributionValue(q, i, j, k);
+            return mBdryRuleArrF[bdry_id]->GetDistributionValue(q, i, j, k);
         }
         else
         {
-            throw std::out_of_range("Invalid boundary ID for mArrayF.");
+            throw std::out_of_range("Invalid boundary ID for mBdryRuleArrF.");
         }
     }
 
     T ComputeBdryRuleG(int bdry_id, int q, int i, int j, int k) const
     {
-        if (bdry_id >= 0 && bdry_id < static_cast<int>(mArrayG.size()))
+        if (bdry_id >= 0 && bdry_id < static_cast<int>(mBdryRuleArrG.size()))
         {
-            return mArrayG[bdry_id]->GetDistributionValue(q, i, j, k);
+            return mBdryRuleArrG[bdry_id]->GetDistributionValue(q, i, j, k);
         }
         else
         {
-            throw std::out_of_range("Invalid boundary ID for mArrayG.");
+            throw std::out_of_range("Invalid boundary ID for mBdryRuleArrG.");
         }
     }
 
     T ComputeBdryRuleH(int bdry_id, int q, int i, int j, int k) const
     {
-        if (bdry_id >= 0 && bdry_id < static_cast<int>(mArrayH.size()))
+        if (bdry_id >= 0 && bdry_id < static_cast<int>(mBdryRuleArrH.size()))
         {
-            return mArrayH[bdry_id]->GetDistributionValue(q, i, j, k);
+            return mBdryRuleArrH[bdry_id]->GetDistributionValue(q, i, j, k);
         }
         else
         {
-            throw std::out_of_range("Invalud boundary ID for mArrayH.");
+            throw std::out_of_range("Invalud boundary ID for mBdryRuleArrH.");
         }
     }
 
     T ComputeBdryRuleUnsafeF(int bdry_id, int q, int i, int j, int k) const
     {
-        return mArrayF[bdry_id]->GetDistributionValue(q, i, j, k);
+        return mBdryRuleArrF[bdry_id]->GetDistributionValue(q, i, j, k);
     }
 
     T ComputeBdryRuleUnsafeG(int bdry_id, int q, int i, int j, int k) const
     {
-        return mArrayG[bdry_id]->GetDistributionValue(q, i, j, k);
+        return mBdryRuleArrG[bdry_id]->GetDistributionValue(q, i, j, k);
     }
 
     T ComputeBdryRuleUnsafeH(int bdry_id, int q, int i, int j, int k) const
     {
-        return mArrayH[bdry_id]->GetDistributionValue(q, i, j, k);
+        return mBdryRuleArrH[bdry_id]->GetDistributionValue(q, i, j, k);
     }
 
 private:
     int mNumberOfBdrys;
 
-    std::vector<AbstractBoundaryRule<T>*> mArrayF;
+    std::vector<AbstractBoundaryRule<T>*> mBdryRuleArrF;
     
-    std::vector<AbstractBoundaryRule<T>*> mArrayG;
+    std::vector<AbstractBoundaryRule<T>*> mBdryRuleArrG;
 
-    std::vector<AbstractBoundaryRule<T>*> mArrayH;
+    std::vector<AbstractBoundaryRule<T>*> mBdryRuleArrH;
 };
 
 

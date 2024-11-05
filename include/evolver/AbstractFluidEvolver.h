@@ -27,7 +27,7 @@ public:
                             const MacroscopicVariable<T>& Fy,
                             const MacroscopicVariable<T>& Fz,
                             const NodeInfo& node,
-                            const BoundaryInfo& bdry) = 0;
+                            const BoundaryInfo<T>& bdry) = 0;
 
     virtual void DoTimestep(AbstractLattice<T>& f,
                             MacroscopicVariable<T>& dens,
@@ -38,7 +38,7 @@ public:
                             const MacroscopicVariable<T>& Fy,
                             const MacroscopicVariable<T>& Fz,
                             NodeInfo& node,
-                            BoundaryInfo& bdry) = 0;
+                            BoundaryInfo<T>& bdry) = 0;
 };
 
 #endif // ABSTRACTFLUIDEVOLVERDEF

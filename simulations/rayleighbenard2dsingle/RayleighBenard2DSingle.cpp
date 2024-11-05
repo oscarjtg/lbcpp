@@ -7,6 +7,7 @@
 #include "domain/BoundaryInfo.h"
 #include "domain/NodeInfo.h"
 #include "evolver/ScalarEvolverSRT.h"
+#include "evolver/FluidEvolverSRT.h"
 #include "force/AllForces.h"
 #include "lattice/LatticeSoAPull.h"
 #include "macroscopic/MacroscopicVariable.h"
@@ -18,6 +19,11 @@ void findGoodModelParameters(double& ag, double& tau_f, double& tau_g, const dou
 template <class T>
 void printAverages(std::string& message, MacroscopicVariable<T>& dens, MacroscopicVariable<T>& velx,
                    MacroscopicVariable<T>& vely, MacroscopicVariable<T>& velz, MacroscopicVariable<T>& temp);
+
+template <class T>
+void saveData(int timstep, std::string& message, AbstractLattice<T>& f, AbstractLattice<T>& g, 
+             MacroscopicVariable<T>& dens, MacroscopicVariable<T>& velx,
+             MacroscopicVariable<T>& vely, MacroscopicVariable<T>& velz, MacroscopicVariable<T>& temp);
                    
 /***************************************************
  *                                                 *
@@ -43,8 +49,12 @@ int main(int argc, char* argv[])
     time_scale = (nz*nz / kinematic_viscosity) * sqrt(Pr / Ra);
     length_scale = velocity_scale * time_scale;
 
-    std::cout << "Length scale = " << length_scale << "\n";
-    std::cout << "Diffusivity = " << thermal_diffusivity << "\n";
+    std::cout << "tau_f               = " << tau_f << "\n";
+    std::cout << "tau_g               = " << tau_g << "\n";
+    std::cout << "alpha*gravity       = " << ag << "\n";
+    std::cout << "Length scale        = " << length_scale << "\n";
+    std::cout << "Kinematic viscosity = " << kinematic_viscosity << "\n";
+    std::cout << "Diffusivity         = " << thermal_diffusivity << "\n";
 
     // Information about this run.
     std::string run_id = "testrun", save_path = "output";
@@ -70,37 +80,35 @@ int main(int argc, char* argv[])
     vely.DisplayInfo();
     temp.DisplayInfo();
 
+    // Set initial density to 1 everywhere.
+    double rho0 = 1.0;
+    dens.SetToConstantValue(rho0);
+
     // Set initial temperature profile.
     double temp_top = 0.5 / static_cast<double>(nz), temp_bot = 1.0 - temp_top;
     temp.SetLinearGradientZ(temp_bot, temp_top);
 
-    double temp_mid = 0.5;
-    temp.SetLinearGradientZ(temp_mid, temp_mid);
-
-    // Initialise distributions.
-    BoundaryInfo<double> bdry(2);
-    NodeInfo node(nx, ny, nz);
-
-    //FluidEvolverSRT<double> fluid_evolver;
-    ScalarEvolverSRT<double> scalar_evolver;
-    scalar_evolver.SetScalarDiffusivity(thermal_diffusivity);
-    scalar_evolver.Initialise(g, temp, velx, vely, velz, node, bdry);
-
-    // Save data.
-    f.WriteToTextFile();
-    g.WriteToTextFile();
-    dens.WriteToTextFile();
-    velx.WriteToTextFile();
-    vely.WriteToTextFile();
-    velz.WriteToTextFile();
-    temp.WriteToTextFile();
-    std::cout << "Initial data saved successfully.\n";
+    int k_mid = nz / 2;
+    for (int j = 0; j < ny; ++j)
+    {
+        for (int i = 0; i < nx; ++ i)
+        {
+            double eps = 1.0e-3;
+            double x = 2 * M_PI * i / nx;
+            double perturbation = eps * cos(x);
+            temp.AddToValue(perturbation, i, j, k_mid);
+        }
+    }
 
     // Set force information.
     double ag_x = 0, ag_y = 0, ag_z = ag, ref_temp = 0.5;
     LinearForceAnomalyTemp<double> force_updater(ag_x, ag_y, ag_z, ref_temp, nx, ny, nz);
+    force_updater.UpdateForce(Fx, Fy, Fz, temp);
 
-    /*
+    // Initialise boundary information.
+    BoundaryInfo<double> bdry(2);
+    NodeInfo node(nx, ny, nz);
+
     // Set boundary information.
     double uwall_x = 0.0, uwall_y = 0.0, uwall_z = 0.0;
     double temp_wall_top = 0.0, temp_wall_bot = 1.0;
@@ -108,7 +116,6 @@ int main(int argc, char* argv[])
     BdryRuleBounceBackBottom<double> bdry_bot_f(&f, &dens, uwall_x, uwall_y, uwall_z);
     BdryRuleScalarDirichletTop<double> bdry_top_g(&g, temp_wall_top, uwall_x, uwall_y, uwall_z);
     BdryRuleScalarDirichletBottom<double> bdry_bot_g(&g, temp_wall_bot, uwall_x, uwall_y, uwall_z);
-
     
     // Add boundary rules.
     int bdry_id_bot = 0;
@@ -121,8 +128,21 @@ int main(int argc, char* argv[])
     // Set node info.
     node.SetBoundaryOnBottom(bdry_id_bot);
     node.SetBoundaryOnTop(bdry_id_top);
-    */
 
+    FluidEvolverSRT<double> fluid_evolver;
+    fluid_evolver.SetKinematicViscosity(kinematic_viscosity);
+    // Note Fx, Fy, Fz must be initialised (i.e. updated) before the next line!
+    fluid_evolver.Initialise(f, dens, velx, vely, velz, Fx, Fy, Fz, node, bdry);
+
+    ScalarEvolverSRT<double> scalar_evolver;
+    scalar_evolver.SetScalarDiffusivity(thermal_diffusivity);
+
+    scalar_evolver.Initialise(g, temp, velx, vely, velz, node, bdry);
+
+    // Save initial data.
+    std::string save_msg_before = "Initial data saved successfully.\n";
+    saveData(0, save_msg_before, f, g, dens, velx, vely, velz, temp);
+    
     std::string message_before = "Before simulation:";
     printAverages(message_before, dens, velx, vely, velz, temp);
 
@@ -138,13 +158,18 @@ int main(int argc, char* argv[])
 
         // Perform one timestep of the standard LB algorithm for f using F.
         // This updates f, dens, velx, vely, and velz.
-        //fluid_evolver.DoTimestep(f, dens, velx, vely, velz, Fx, Fy, Fz, node, bdry);
+        fluid_evolver.DoTimestep(f, dens, velx, vely, velz, Fx, Fy, Fz, node, bdry);
 
         // Compute diagnostic.
     }
 
+    // Print averages after.
     std::string message_after = "After simulation:";
     printAverages(message_after, dens, velx, vely, velz, temp);
+
+    // Save data after.
+    std::string save_msg_after = "Final data saved successfully.\n";
+    saveData(nt, save_msg_after, f, g, dens, velx, vely, velz, temp);
 }
 
 /***************************************************
@@ -239,4 +264,19 @@ void printAverages(std::string& message, MacroscopicVariable<T>& dens, Macroscop
     std::cout << "Average Y velocity = " << vely.ComputeAverage() << "\n";
     std::cout << "Average Z velocity = " << velz.ComputeAverage() << "\n";
     std::cout << "Average temperature = " << temp.ComputeAverage() << "\n";
+}
+
+template <class T>
+void saveData(int timestep, std::string& message, AbstractLattice<T>& f, AbstractLattice<T>& g, 
+             MacroscopicVariable<T>& dens, MacroscopicVariable<T>& velx,
+             MacroscopicVariable<T>& vely, MacroscopicVariable<T>& velz, MacroscopicVariable<T>& temp)
+{
+    f.WriteToTextFile(timestep);
+    g.WriteToTextFile(timestep);
+    dens.WriteToTextFile(timestep);
+    velx.WriteToTextFile(timestep);
+    vely.WriteToTextFile(timestep);
+    velz.WriteToTextFile(timestep);
+    temp.WriteToTextFile(timestep);
+    std::cout << message;
 }

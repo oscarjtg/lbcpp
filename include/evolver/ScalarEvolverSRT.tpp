@@ -74,81 +74,70 @@ void ScalarEvolverSRT<T>::DoTimestep(AbstractLattice<T>& g,
         {
             for (int i = 0; i < node.GetNX(); ++i)
             {
-                // implementation here.
+                T c_ = 0; // Initialise local concentration.
                 if (node.IsFluid(i, j, k))
                 {
-                    // Fluid LB timestep.
+                    // Fluid streaming step.
 
                     // Grab local distribution function data
-                    // and calculate local concentration.
-                    T c_ = 0;
+                    // and add to local concentration.
                     for (int q = 0; q < nq; ++q)
                     {
                         T g_ = g.GetCurrF(q, i, j, k);
                         c_ += g_;
                         glocal[q] = g_;
                     }
-                    // Save local concentration to array.
-                    conc.SetValue(c_, i, j, k);
-
-                    // Grab local velocity.
-                    T u_ = velx.GetValue(i, j, k);
-                    T v_ = vely.GetValue(i, j, k);
-                    T w_ = velz.GetValue(i, j, k);
-
-                    // Calculate velocity magnitude squared.
-                    T vel_squared = u_*u_ + v_*v_ + w_*w_;
-
-                    // Do SRT collision.
-                    for (int q = 0; q < nq; ++q)
-                    {
-                        T vel_projection = u_ * g.CX(q) + v_ * g.CY(q) + w_ * g.CZ(q);
-                        T gstar = mOmega * computeSecondOrderEquilibrium(c_, vel_projection, vel_squared, g.W(q)) + (static_cast<T>(1.0) - mOmega) * glocal[q];
-                        g.SetCurrFStar(gstar, q, i, j, k);
-                    }
-
                 }
                 else if (node.IsBoundary(i, j, k))
                 {
-                    // Boundary LB timestep.
+                    // Boundary streaming step.
 
                     // Work out which boundary condition rule you should be using.
                     int bdry_id = node.GetBoundaryID(i, j, k);
 
                     // Grab data according to boundary condition rule,
-                    // and calculate local concentration.
-                    T c_ = 0;
+                    // and add to local concentration.
                     for (int q = 0; q < nq; ++q)
                     {
                         T g_ = bdry.ComputeBdryRuleG(bdry_id, q, i, j, k);
                         c_ += g_;
-                    }
-                    // Save local concentration to array.
-                    conc.SetValue(c_, i, j, k);
-
-                    // Grab local velocity.
-                    T u_ = velx.GetValue(i, j, k);
-                    T v_ = vely.GetValue(i, j, k);
-                    T w_ = velz.GetValue(i, j, k);
-
-                    // Calculate velocity magnitude squared.
-                    T vel_squared = u_*u_ + v_*v_ + w_*w_;
-
-                    // Do SRT collision.
-                    for (int q = 0; q < nq; ++q)
-                    {
-                        T vel_projection = u_ * g.CX(q) + v_ * g.CY(q) + w_ * g.CZ(q);
-                        T gstar = mOmega * computeSecondOrderEquilibrium(c_, vel_projection, vel_squared, g.W(q)) + (static_cast<T>(1.0) - mOmega) * glocal[q];
-                        g.SetCurrFStar(gstar, q, i, j, k);
+                        glocal[q] = g_;
                     }
                 }
                 else if (node.IsInterface(i, j, k))
                 {
-                    // Interface LB timestep.
+                    // Interface LB step.
+                    // To be implemented.
+                    continue;
                 }
                 else
                 {
-                    // do nothing if it's a solid node.
+                    // do nothing if it's a solid or gas node.
+                    continue;
+                }
+                // Local collision step.
+
+                // Save local concentration to array.
+                conc.SetValue(c_, i, j, k);
+
+                // Grab local velocity.
+                T u_ = velx.GetValue(i, j, k);
+                T v_ = vely.GetValue(i, j, k);
+                T w_ = velz.GetValue(i, j, k);
+
+                // Calculate velocity magnitude squared.
+                T vel_squared = u_*u_ + v_*v_ + w_*w_;
+
+                // Do SRT collision.
+                for (int q = 0; q < nq; ++q)
+                {
+                    // Compute velocity projection.
+                    T vel_projection = u_ * g.CX(q) + v_ * g.CY(q) + w_ * g.CZ(q);
+                    // Compute equilibrium distribution.
+                    T geq = computeSecondOrderEquilibrium(c_, vel_projection, vel_squared, g.W(q));
+                    // Compute post-collision DF with SRT operator.
+                    T gstar = mOmega * geq + (static_cast<T>(1.0) - mOmega) * glocal[q];
+                    g.SetCurrFStar(gstar, q, i, j, k);
                 }
             }
         }

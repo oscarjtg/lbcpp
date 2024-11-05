@@ -14,17 +14,33 @@ public:
 
     ~BdryRuleScalarDirichletBottom() = default;
 
+    T GetWallConc() const
+    {
+        return this->mWallConc;
+    }
+
     T GetDistributionValue(int q, int i, int j, int k) const override
     {
         if ((this->mpDistribution)->EZ(q) > 0)
         {
             // Bounce back rule for DFs coming from above.
-            return this->compute_antibounceback(q, i, j, k);
+            //std::cout << "BdryRuleScalarDirichletBottom.GetDistributionValue(q, i, j, k):\n";
+            //std::cout << "Computing bounce back for q = " << q;
+            //std::cout << " at node (" << i << ", " << j << ", " << k << ")";
+            //std::cout << " with wall conc " << this->mWallConc << "\n";
+            T ans = this->compute_antibounceback(q, i, j, k);
+            //std::cout << "Returns: " << ans << "\n";
+            return ans;
         }
         else
         {
             // Normal streaming.
-            return (this->mpDistribution)->GetCurrF(q, i, j, k);
+            T ans = (this->mpDistribution)->GetCurrF(q, i, j, k);
+            ////std::cout << "BdryRuleScalarDirichletBottom.GetDistributionValue(q, i, j, k):\n";
+            ////std::cout << "Grabbing streamed F for q = " << q;
+            ////std::cout << " at node (" << i << ", " << j << ", " << k << ")";
+            ////std::cout << "Returns: " << ans << "\n";
+            return ans;
         }
     }
 };

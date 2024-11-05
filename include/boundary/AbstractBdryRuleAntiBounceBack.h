@@ -56,6 +56,12 @@ protected:
         T weight = (this->mpDistribution)->W(q);
         T u_dot_c = mWallVelX * (this->mpDistribution)->CX(qrev) + mWallVelY * (this->mpDistribution)->CY(qrev) + mWallVelZ * (this->mpDistribution)->CZ(qrev);
         T usq = mWallVelX*mWallVelX + mWallVelY*mWallVelY + mWallVelZ*mWallVelZ;
+        //std::cout << "compute_antibounceback(q, i, j, k): ";
+        //std::cout << "qrev = " << qrev;
+        //std::cout << ", mWallConc = " << mWallConc;
+        //std::cout << ", weight = " << weight;
+        //std::cout << ", u_dot_c = " << u_dot_c;
+        //std::cout << ", usq = " << usq << "\n";
         return -(this->mpDistribution)->GetPrevFStar(qrev, i, j, k) + static_cast<T>(2.0)*computeSecondOrderEquilibrium(mWallConc, u_dot_c, usq, weight);
     }
 };

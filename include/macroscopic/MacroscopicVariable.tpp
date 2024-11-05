@@ -22,6 +22,27 @@ void MacroscopicVariable<T>::SetValue(T value, int i, int j, int k)
 }
 
 template <class T>
+void MacroscopicVariable<T>::AddToValue(T additive_value, int i, int j, int k)
+{
+    mArray[idx(i, j, k)] += additive_value;
+}
+
+template <class T>
+void MacroscopicVariable<T>::SetToConstantValue(T value)
+{
+    for (int k = 0; k < mSizeZ; ++k)
+    {
+        for (int j = 0; j < mSizeY; ++j)
+        {
+            for (int i = 0; i < mSizeX; ++i)
+            {
+                this->SetValue(value, i, j, k);
+            }
+        }
+    }
+}
+
+template <class T>
 void MacroscopicVariable<T>::SetLinearGradientZ(T bottom, T top)
 {
     for (int k = 0; k < mSizeZ; ++k)
