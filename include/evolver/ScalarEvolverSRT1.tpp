@@ -1,17 +1,17 @@
 #include <array>
 
-#include "evolver/ScalarEvolverSRT.h"
+#include "evolver/ScalarEvolverSRT1.h"
 #include "equilibria/Equilibria.h"
 
 template <class T>
-void ScalarEvolverSRT<T>::SetScalarDiffusivity(AbstractLattice<T>& g, T kappa)
+void ScalarEvolverSRT1<T>::SetScalarDiffusivity(AbstractLattice<T>& g, T kappa)
 {
     T tau = g.CSI() * kappa + 0.5;
     this->mOmega = 1 / tau;
 }
 
 template <class T>
-void ScalarEvolverSRT<T>::Initialise(AbstractLattice<T>& g,
+void ScalarEvolverSRT1<T>::Initialise(AbstractLattice<T>& g,
                                     const MacroscopicVariable<T>& conc,
                                     const MacroscopicVariable<T>& velx,
                                     const MacroscopicVariable<T>& vely,
@@ -35,7 +35,7 @@ void ScalarEvolverSRT<T>::Initialise(AbstractLattice<T>& g,
                     for (int q = 0; q < g.NQ(); ++q)
                     {
                         T vel_projection = u_ * g.CX(q) + v_ * g.CY(q) + w_ * g.CZ(q);
-                        T gstar = computeSecondOrderEquilibrium(c_, vel_projection, vel_squared, g.W(q));
+                        T gstar = computeFirstOrderEquilibrium(c_, vel_projection, vel_squared, g.W(q));
                         g.SetCurrFStar(gstar, q, i, j, k);
                     }
                 }
@@ -52,7 +52,7 @@ void ScalarEvolverSRT<T>::Initialise(AbstractLattice<T>& g,
 }
 
 template <class T>
-void ScalarEvolverSRT<T>::DoTimestep(AbstractLattice<T>& g,
+void ScalarEvolverSRT1<T>::DoTimestep(AbstractLattice<T>& g,
                                     MacroscopicVariable<T>& conc,
                                     const MacroscopicVariable<T>& velx,
                                     const MacroscopicVariable<T>& vely,
@@ -134,7 +134,7 @@ void ScalarEvolverSRT<T>::DoTimestep(AbstractLattice<T>& g,
                     // Compute velocity projection, scaled by lattice speed of sound.
                     T cu = (u_ * g.CX(q) + v_ * g.CY(q) + w_ * g.CZ(q)) * g.CSI();
                     // Compute equilibrium distribution.
-                    T geq = computeSecondOrderEquilibrium(c_, cu, usq, g.W(q));
+                    T geq = computeFirstOrderEquilibrium(c_, cu, usq, g.W(q));
                     // Compute post-collision DF with SRT operator.
                     T gstar = mOmega * geq + (static_cast<T>(1.0) - mOmega) * glocal[q];
 

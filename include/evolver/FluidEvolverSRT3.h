@@ -1,15 +1,15 @@
-#ifndef FLUIDEVOLVERSRTDEF
-#define FLUIDEVOLVERSRTDEF
+#ifndef FluidEvolverSRT3DEF
+#define FluidEvolverSRT3DEF
 
 #include "evolver/AbstractFluidEvolver.h"
 
 template <class T>
-class FluidEvolverSRT : public AbstractFluidEvolver<T>
+class FluidEvolverSRT3 : public AbstractFluidEvolver<T>
 {
 public:
-    FluidEvolverSRT() = default;
+    FluidEvolverSRT3() = default;
 
-    ~FluidEvolverSRT() = default;
+    ~FluidEvolverSRT3() = default;
 
     void SetKinematicViscosity(AbstractLattice<T>& f, T nu) override;
 
@@ -41,6 +41,6 @@ private:
     T mOmega;
 };
 
-#include "evolver/FluidEvolverSRT.tpp"
+#include "evolver/FluidEvolverSRT3.tpp"
 
-#endif // FLUIDEVOLVERSRTDEF
+#endif // FluidEvolverSRT3DEF

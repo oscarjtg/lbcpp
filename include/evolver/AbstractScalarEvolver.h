@@ -14,7 +14,7 @@ public:
 
     virtual ~AbstractScalarEvolver() = default;
 
-    virtual void SetScalarDiffusivity(T kappa) = 0;
+    virtual void SetScalarDiffusivity(AbstractLattice<T>& g, T kappa) = 0;
 
     virtual void Initialise(AbstractLattice<T>& g,
                             const MacroscopicVariable<T>& conc,

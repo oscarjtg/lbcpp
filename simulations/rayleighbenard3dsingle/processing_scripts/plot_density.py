@@ -1,19 +1,25 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+import sys
 
-# Variables to be easily changed
-run_id = "testrun"
-processor_number = 0
-timestep = 30
-y_value = 0
+# Check if the correct number of arguments are provided
+if len(sys.argv) != 5:
+    print("Usage: script.py <run_id> <processor_number> <timestep> <y_value>")
+    sys.exit(1)
+
+# Get command line arguments
+run_id = sys.argv[1]
+processor_number = int(sys.argv[2])
+timestep = int(sys.argv[3])
+y_value = int(sys.argv[4])
 
 # Format processor number and timestep with leading zeros
 processor_number_str = f"{processor_number:03d}"
 timestep_str = f"{timestep:09d}"
 
 # Construct the filename
-filename = f"{run_id}_p{processor_number_str}_t{timestep_str}_w.txt"
+filename = f"{run_id}_p{processor_number_str}_t{timestep_str}_r.txt"
 filepath = os.path.join("output", filename)
 
 # Read the file content
@@ -53,4 +59,4 @@ ax2.set_title('Average Vertical Density Profile')
 
 plt.tight_layout()
 #plt.show()
-plt.savefig(f"plots/{run_id}_p{processor_number_str}_t{timestep_str}_w.png", dpi=150)
+plt.savefig(f"plots/{run_id}_p{processor_number_str}_t{timestep_str}_r.png", dpi=150)

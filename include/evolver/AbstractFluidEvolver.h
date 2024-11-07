@@ -14,9 +14,9 @@ public:
 
     ~AbstractFluidEvolver() = default;
 
-    virtual void SetKinematicViscosity(T nu) = 0;
+    virtual void SetKinematicViscosity(AbstractLattice<T>& f, T nu) = 0;
 
-    virtual void SetBulkViscosity(T eta) = 0;
+    virtual void SetBulkViscosity(AbstractLattice<T>& f, T eta) = 0;
 
     virtual void Initialise(AbstractLattice<T>& f,
                             const MacroscopicVariable<T>& dens,

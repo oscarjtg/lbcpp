@@ -56,7 +56,9 @@ protected:
         int qrev = (this->mpDistribution)->QRev(q);
         T u_dot_c = mWallVelX * (this->mpDistribution)->CX(qrev) + mWallVelY * (this->mpDistribution)->CY(qrev) + mWallVelZ * (this->mpDistribution)->CZ(qrev);
         T delta = static_cast<T>(6.0) * (this->mpDistribution)->W(q) * mpDensity->GetValue(i, j, k) * u_dot_c;
-        return (this->mpDistribution)->GetPrevFStar(qrev, i, j, k) - delta;
+        T fstar_prev = (this->mpDistribution)->GetPrevFStar(qrev, i, j, k);
+        //std::cout << "fstar_prev = " << fstar_prev << "\n";
+        return fstar_prev - delta;
     }
 };
 

@@ -78,6 +78,11 @@ public:
         return mVels;
     }
 
+    inline T CSI() const
+    {
+        return mCSI;
+    }
+
 protected:
     const int mSizeX, mSizeY, mSizeZ, mGridSize, mDims, mVels;
     
@@ -89,6 +94,8 @@ protected:
     std::array<int, 27> mEZ;
     std::array<T, 27> mW;
     std::array<int, 27> mQRev;
+
+    T mCSI; // Lattice speed of sound, inverse, squared.
 
     std::string construct_basepath(const int timestep) const;
 

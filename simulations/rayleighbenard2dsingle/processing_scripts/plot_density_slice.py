@@ -1,12 +1,18 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+import sys
 
-# Variables to be easily changed
-run_id = "testrun"
-processor_number = 0
-timestep = 30
-y_value = 0
+# Check if the correct number of arguments are provided
+if len(sys.argv) != 5:
+    print("Usage: script.py <run_id> <processor_number> <timestep> <y_value>")
+    sys.exit(1)
+
+# Get command line arguments
+run_id = sys.argv[1]
+processor_number = int(sys.argv[2])
+timestep = int(sys.argv[3])
+y_value = int(sys.argv[4])
 
 # Format processor number and timestep with leading zeros
 processor_number_str = f"{processor_number:03d}"

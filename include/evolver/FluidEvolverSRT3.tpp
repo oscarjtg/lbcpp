@@ -1,18 +1,18 @@
 #include <array>
 
-#include "evolver/FluidEvolverSRT.h"
+#include "evolver/FluidEvolverSRT3.h"
 #include "equilibria/Equilibria.h"
 #include "force/ForceSource.h"
 
 template <class T>
-void FluidEvolverSRT<T>::SetKinematicViscosity(AbstractLattice<T>& f, T nu)
+void FluidEvolverSRT3<T>::SetKinematicViscosity(AbstractLattice<T>& f, T nu)
 {
     T tau = f.CSI() * nu + 0.5;
     this->mOmega = 1/tau;
 }
 
 template <class T>
-void FluidEvolverSRT<T>::SetBulkViscosity(AbstractLattice<T>& f, T eta)
+void FluidEvolverSRT3<T>::SetBulkViscosity(AbstractLattice<T>& f, T eta)
 {
     std::cout << "Bulk viscosity eta = ";
     std::cout << eta << "cannot be specified in SRT model.\n";
@@ -20,7 +20,7 @@ void FluidEvolverSRT<T>::SetBulkViscosity(AbstractLattice<T>& f, T eta)
 }
 
 template <class T>
-void FluidEvolverSRT<T>::Initialise(AbstractLattice<T>& f,
+void FluidEvolverSRT3<T>::Initialise(AbstractLattice<T>& f,
                                     const MacroscopicVariable<T>& dens,
                                     const MacroscopicVariable<T>& velx,
                                     const MacroscopicVariable<T>& vely,
@@ -59,7 +59,7 @@ void FluidEvolverSRT<T>::Initialise(AbstractLattice<T>& f,
                     for (int q = 0; q < f.NQ(); ++q)
                     {
                         T vel_projection = u_eq * f.CX(q) + v_eq * f.CY(q) + w_eq * f.CZ(q);
-                        T fstar = computeSecondOrderEquilibrium(r_, vel_projection, vel_squared, f.W(q));
+                        T fstar = computeThirdOrderEquilibrium(r_, vel_projection, vel_squared, f.W(q));
                         f.SetCurrFStar(fstar, q, i, j, k);
                         rstar_ += fstar;
                         //std::cout << "fstar[" << q << ", " << i << ", " << j << ", " << k << "] = " << fstar << "\n";
@@ -79,7 +79,7 @@ void FluidEvolverSRT<T>::Initialise(AbstractLattice<T>& f,
 }
 
 template <class T>
-void FluidEvolverSRT<T>::DoTimestep(AbstractLattice<T>& f,
+void FluidEvolverSRT3<T>::DoTimestep(AbstractLattice<T>& f,
                                     MacroscopicVariable<T>& dens,
                                     MacroscopicVariable<T>& velx,
                                     MacroscopicVariable<T>& vely,
@@ -192,7 +192,7 @@ void FluidEvolverSRT<T>::DoTimestep(AbstractLattice<T>& f,
                     T cF = (Fx_ * f.CX(q) + Fy_ * f.CY(q) + Fz_ * f.CZ(q)) * f.CSI();
 
                     // Compute equilibrium distribution.
-                    T feq = computeSecondOrderEquilibrium(r_, cu, usq, f.W(q));
+                    T feq = computeThirdOrderEquilibrium(r_, cu, usq, f.W(q));
                     // Compute the force source term.
                     T force_source = computeSecondOrderForceSource(cu, cF, uF, f.W(q));
 

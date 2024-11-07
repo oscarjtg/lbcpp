@@ -16,6 +16,15 @@ AbstractLattice<T>::AbstractLattice(int size_x, int size_y, int size_z, int grid
         {
             throw std::invalid_argument("Invalid size_y (number of grid points along y direction) for dims = 2 grid. Should be 1.");
         }
+        else if (dims == 2 && vels == 4)
+        {
+            mEX = {1, 0, -1, 0};
+            mEY = {0, 0, 0, 0};
+            mEZ = {0, 1, 0, -1};
+            mW = {1./4., 1./4., 1./4., 1./4.};
+            mQRev = {2, 3, 0, 1};
+            mCSI = 2;
+        }
         else if (dims == 2 && vels == 5)
         {
             mEX = {0, 1, 0, -1, 0};
@@ -23,6 +32,7 @@ AbstractLattice<T>::AbstractLattice(int size_x, int size_y, int size_z, int grid
             mEZ = {0, 0, 1, 0, -1};
             mW = {1./3., 1./6., 1./6., 1./6., 1./6.};
             mQRev = {0, 3, 4, 1, 2};
+            mCSI = 3;
         }
         else if (dims == 2 && vels == 9)
         {
@@ -31,6 +41,25 @@ AbstractLattice<T>::AbstractLattice(int size_x, int size_y, int size_z, int grid
             mEZ = {0, 0, 1, 0, -1, 1, 1, -1, -1};
             mW = {4./9., 1./9., 1./9., 1./9., 1./9., 1./36., 1./36., 1./36., 1./36.};
             mQRev = {0, 3, 4, 1, 2, 7, 8, 5, 6};
+            mCSI = 3;
+        }
+        else if (dims == 3 && vels == 6)
+        {
+            mEX = {1, -1, 0, 0, 0, 0};
+            mEY = {0, 0, 1, -1, 0, 0};
+            mEZ = {0, 0, 0, 0, 1, -1};
+            mW = {1./6., 1./6., 1./6., 1./6., 1./6., 1./6.};
+            mQRev = {1, 0, 3, 2, 5, 4};
+            mCSI = 2;
+        }
+        else if (dims == 3 && vels == 7)
+        {
+            mEX = {0, 1, -1, 0, 0, 0, 0};
+            mEY = {0, 0, 0, 1, -1, 0, 0};
+            mEZ = {0, 0, 0, 0, 0, 1, -1};
+            mW = {1./4., 1./8., 1./8., 1./8., 1./8., 1./8., 1./8.};
+            mQRev = {0, 2, 1, 4, 3, 6, 5};
+            mCSI = 2;
         }
         else if (dims == 3 && vels == 15)
         {
@@ -39,14 +68,16 @@ AbstractLattice<T>::AbstractLattice(int size_x, int size_y, int size_z, int grid
             mEZ = {0, 0, 0, 0, 0, 1, -1, 1, -1, -1, 1, 1, -1, 1, -1};
             mW = {2./9., 1./9., 1./9., 1./9., 1./9., 1./9., 1./9., 1./72., 1./72., 1./72., 1./72., 1./72., 1./72., 1./72., 1./72.};
             mQRev = {0, 2, 1, 4, 3, 6, 5, 8, 7, 10, 9, 12, 11, 14, 13};
+            mCSI = 3;
         }
         else if (dims == 3 && vels == 19)
         {
             mEX = {0, 1, -1, 0, 0, 0, 0, 1, -1, 1, -1, 0, 0, 1, -1, 1, -1, 0, 0};
             mEY = {0, 0, 0, 1, -1, 0, 0, 1, -1, 0, 0, 1, -1, -1, 1, 0, 0, 1, -1};
             mEZ = {0, 0, 0, 0, 0, 1, -1, 0, 0, 1, -1, 1, -1, 0, 0, -1, 1, -1, 1};
-            mW = {1./3., 1./18., 1./18., 1./18., 1./18., 1./18., 1./18.,  1./36., 1./36., 1./36., 1./36., 1./36., 1./36., 1./36., 1./36., 1./36., 1./36., 1./36.};
-            mQRev = {0, 2, 1,4, 3, 6, 5, 8, 7, 10, 9, 12, 11, 14, 13, 16, 15, 18, 17};
+            mW = {1./3., 1./18., 1./18., 1./18., 1./18., 1./18., 1./18.,  1./36., 1./36., 1./36., 1./36., 1./36., 1./36., 1./36., 1./36., 1./36., 1./36., 1./36., 1./36.};
+            mQRev = {0, 2, 1, 4, 3, 6, 5, 8, 7, 10, 9, 12, 11, 14, 13, 16, 15, 18, 17};
+            mCSI = 3;
         }
         else if (dims == 3 && vels == 27)
         {
@@ -55,6 +86,7 @@ AbstractLattice<T>::AbstractLattice(int size_x, int size_y, int size_z, int grid
             mEZ = {0, 0, 0, 0, 0, 1, -1, 0, 0, 1, -1, 1, -1, 0, 0, -1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1, -1};
             mW = {8./27., 2./27., 2./27., 2./27., 2./27., 2./27., 2./27., 1./54., 1./54., 1./54., 1./54., 1./54., 1./54., 1./54., 1./54., 1./54., 1./54., 1./54., 1./54., 1./216., 1./216., 1./216., 1./216., 1./216., 1./216., 1./216., 1./216.};
             mQRev = {0, 2, 1, 4, 3, 6, 5, 8, 7, 10, 9, 12, 11, 14, 13, 16, 15, 18, 17, 20, 19, 22, 21, 24, 23, 26, 25};
+            mCSI = 3;
         }
         else
         {
@@ -66,11 +98,13 @@ template <class T>
 void AbstractLattice<T>::DisplayLatticeParameters() const
 {
     std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n";
-    std::cout << "Type of variable: " << mIDString << "\n";
-    std::cout << "Run ID:           " << mRunID << "\n";
-    std::cout << "Process number    " << mProcessNumber << "\n";
-    std::cout << "Grid dimensions:  ";
+    std::cout << "Type of variable:  " << mIDString << "\n";
+    std::cout << "Run ID:            " << mRunID << "\n";
+    std::cout << "Process number     " << mProcessNumber << "\n";
+    std::cout << "Grid dimensions:   ";
     std::cout << mSizeX << " x " << mSizeY << " x " << mSizeZ << "\n";
+    std::cout << "Lattice type:      " << "D" << mDims << "Q" << mVels << "\n";
+    std::cout << "Lattice 1 / c_s^2: " << mCSI << "\n";
     std::cout << "i, ex, ey, ez, w, irev\n";
     double sum = 0.0;
     bool all_okay = true;

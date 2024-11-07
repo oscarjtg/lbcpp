@@ -1,15 +1,15 @@
-#ifndef SCALAREVOLVERSRTDEF
-#define SCALAREVOLVERSRTDEF
+#ifndef ScalarEvolverSRT1DEF
+#define ScalarEvolverSRT1DEF
 
 #include "evolver/AbstractScalarEvolver.h"
 
 template <class T>
-class ScalarEvolverSRT : public AbstractScalarEvolver<T>
+class ScalarEvolverSRT1 : public AbstractScalarEvolver<T>
 {
 public:
-    ScalarEvolverSRT() = default;
+    ScalarEvolverSRT1() = default;
 
-    ~ScalarEvolverSRT() = default;
+    ~ScalarEvolverSRT1() = default;
 
     void SetScalarDiffusivity(AbstractLattice<T>& g, T kappa) override;
    
@@ -33,6 +33,6 @@ private:
     T mOmega;
 };
 
-#include "evolver/ScalarEvolverSRT.tpp"
+#include "evolver/ScalarEvolverSRT1.tpp"
 
-#endif // SCALAREVOLVERSRTDEF
+#endif // ScalarEvolverSRT1DEF
