@@ -5,17 +5,17 @@
 #include "equilibria/Equilibria.h"
 #include "macroscopic/MacroscopicVariable.h"
 
-template <class T>
-class AbstractBdryRuleAntiBounceBack : public AbstractBoundaryRule<T>
+template <typename T, int ND, int NQ>
+class AbstractBdryRuleAntiBounceBack : public AbstractBoundaryRule<T, ND, NQ>
 {
 public:
     AbstractBdryRuleAntiBounceBack() = default;
 
-    AbstractBdryRuleAntiBounceBack(AbstractLattice<T>* pDistribution)
-        : AbstractBoundaryRule<T>(pDistribution) {}
+    AbstractBdryRuleAntiBounceBack(AbstractLattice<T, ND, NQ>* pDistribution)
+        : AbstractBoundaryRule<T, ND, NQ>(pDistribution) {}
 
-    AbstractBdryRuleAntiBounceBack(AbstractLattice<T>* pDistribution, T wall_conc, T velx, T vely, T velz)
-        : AbstractBoundaryRule<T>(pDistribution), mWallConc(wall_conc), mWallVelX(velx), mWallVelY(vely), mWallVelZ(velz) {}
+    AbstractBdryRuleAntiBounceBack(AbstractLattice<T, ND, NQ>* pDistribution, T wall_conc, T velx, T vely, T velz)
+        : AbstractBoundaryRule<T, ND, NQ>(pDistribution), mWallConc(wall_conc), mWallVelX(velx), mWallVelY(vely), mWallVelZ(velz) {}
 
     ~AbstractBdryRuleAntiBounceBack() = default;
 

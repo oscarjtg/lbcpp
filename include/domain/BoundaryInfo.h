@@ -7,7 +7,7 @@
 #include "boundary/AbstractBoundaryRule.h"
 #include "boundary/AllBoundaryRules.h"
 
-template <class T>
+template <class T, int ND, int NQ>
 class BoundaryInfo
 {
 public:
@@ -15,7 +15,7 @@ public:
 
     ~BoundaryInfo() = default;
 
-    void AddBoundaryRule(AbstractBoundaryRule<T>* bdry_rule, int bdry_id)
+    void AddBoundaryRule(AbstractBoundaryRule<T, ND, NQ>* bdry_rule, int bdry_id)
     {
         // Check that the bdry_id corresponds to the position of the new bdry_rule.
         if (bdry_id == static_cast<int>(mBdryRuleArr.size()))
@@ -48,7 +48,7 @@ public:
 private:
     int mNumberOfBdrys;
 
-    std::vector<AbstractBoundaryRule<T>*> mBdryRuleArr;
+    std::vector<AbstractBoundaryRule<T, ND, NQ>*> mBdryRuleArr;
 };
 
 

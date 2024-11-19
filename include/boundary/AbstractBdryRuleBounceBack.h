@@ -4,17 +4,17 @@
 #include "boundary/AbstractBoundaryRule.h"
 #include "macroscopic/MacroscopicVariable.h"
 
-template <class T>
-class AbstractBdryRuleBounceBack : public AbstractBoundaryRule<T>
+template <typename T, int ND, int NQ>
+class AbstractBdryRuleBounceBack : public AbstractBoundaryRule<T, ND, NQ>
 {
 public:
     AbstractBdryRuleBounceBack() = default;
 
-    AbstractBdryRuleBounceBack(AbstractLattice<T>* pDistribution)
-        : AbstractBoundaryRule<T>(pDistribution) {}
+    AbstractBdryRuleBounceBack(AbstractLattice<T, ND, NQ>* pDistribution)
+        : AbstractBoundaryRule<T, ND, NQ>(pDistribution) {}
 
-    AbstractBdryRuleBounceBack(AbstractLattice<T>* pDistribution, MacroscopicVariable<T>* pDensity, T velx, T vely, T velz)
-        : AbstractBoundaryRule<T>(pDistribution), mpDensity(pDensity), mWallVelX(velx), mWallVelY(vely), mWallVelZ(velz) {}
+    AbstractBdryRuleBounceBack(AbstractLattice<T, ND, NQ>* pDistribution, MacroscopicVariable<T>* pDensity, T velx, T vely, T velz)
+        : AbstractBoundaryRule<T, ND, NQ>(pDistribution), mpDensity(pDensity), mWallVelX(velx), mWallVelY(vely), mWallVelZ(velz) {}
 
     ~AbstractBdryRuleBounceBack() = default;
 

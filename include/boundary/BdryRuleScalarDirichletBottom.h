@@ -3,14 +3,14 @@
 
 #include "boundary/AbstractBdryRuleAntiBounceBack.h"
 
-template <class T>
-class BdryRuleScalarDirichletBottom : public AbstractBdryRuleAntiBounceBack<T>
+template <typename T, int ND, int NQ>
+class BdryRuleScalarDirichletBottom : public AbstractBdryRuleAntiBounceBack<T, ND, NQ>
 {
 public:
     BdryRuleScalarDirichletBottom() = default;
 
-    BdryRuleScalarDirichletBottom(AbstractLattice<T>* pDistribution, T wall_conc, T velx, T vely, T velz)
-        : AbstractBdryRuleAntiBounceBack<T>(pDistribution, wall_conc, velx, vely, velz) {}
+    BdryRuleScalarDirichletBottom(AbstractLattice<T, ND, NQ>* pDistribution, T wall_conc, T velx, T vely, T velz)
+        : AbstractBdryRuleAntiBounceBack<T, ND, NQ>(pDistribution, wall_conc, velx, vely, velz) {}
 
     ~BdryRuleScalarDirichletBottom() = default;
 

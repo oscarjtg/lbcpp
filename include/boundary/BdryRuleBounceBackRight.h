@@ -3,17 +3,17 @@
 
 #include "boundary/AbstractBdryRuleBounceBack.h"
 
-template <class T>
-class BdryRuleBounceBackRight : public AbstractBdryRuleBounceBack<T>
+template <typename T, int ND, int NQ>
+class BdryRuleBounceBackRight : public AbstractBdryRuleBounceBack<T, ND, NQ>
 {
 public:
     BdryRuleBounceBackRight() = default;
 
-    BdryRuleBounceBackRight(AbstractLattice<T>* pDistribution)
-        : AbstractBdryRuleBounceBack<T>(pDistribution) {}
+    BdryRuleBounceBackRight(AbstractLattice<T, ND, NQ>* pDistribution)
+        : AbstractBdryRuleBounceBack<T, ND, NQ>(pDistribution) {}
 
-    BdryRuleBounceBackRight(AbstractLattice<T>* pDistribution, MacroscopicVariable<T>* pDensity, T velx, T vely, T velz)
-        : AbstractBdryRuleBounceBack<T>(pDistribution, pDensity, velx, vely, velz) {}
+    BdryRuleBounceBackRight(AbstractLattice<T, ND, NQ>* pDistribution, MacroscopicVariable<T>* pDensity, T velx, T vely, T velz)
+        : AbstractBdryRuleBounceBack<T, ND, NQ>(pDistribution, pDensity, velx, vely, velz) {}
 
     ~BdryRuleBounceBackRight() = default;
 

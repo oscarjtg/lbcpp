@@ -3,34 +3,15 @@
 
 #include "evolver/AbstractScalarEvolver.h"
 
-template <class T>
-class ScalarEvolverSRT : public AbstractScalarEvolver<T>
+template <typename T, int ND, int NQ>
+class ScalarEvolverSRT : public AbstractScalarEvolver<T, ND, NQ>
 {
 public:
     ScalarEvolverSRT() = default;
 
     ~ScalarEvolverSRT() = default;
 
-    void SetScalarDiffusivity(AbstractLattice<T>& g, T kappa) override;
-   
-    void Initialise(AbstractLattice<T>& g,
-                    const MacroscopicVariable<T>& conc,
-                    const MacroscopicVariable<T>& velx,
-                    const MacroscopicVariable<T>& vely,
-                    const MacroscopicVariable<T>& velz,
-                    const NodeInfo& node,
-                    const BoundaryInfo<T>& bdry) override;
-    
-    void DoTimestep(AbstractLattice<T>& g,
-                    MacroscopicVariable<T>& conc,
-                    const MacroscopicVariable<T>& velx,
-                    const MacroscopicVariable<T>& vely,
-                    const MacroscopicVariable<T>& velz,
-                    const NodeInfo& node,
-                    const BoundaryInfo<T>& bdry) override;
-
-private:
-    T mOmega;
+    virtual void DoLocalCollision(AbstractLattice<T, ND, NQ>& g, std::array<T, NQ> glocal, T c_, T u_, T v_, T w_, int i, int j, int k) override;
 };
 
 #include "evolver/ScalarEvolverSRT.tpp"

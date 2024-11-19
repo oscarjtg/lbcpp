@@ -33,7 +33,6 @@ public:
         double current_value = mValues.GetElement(0);
         for (int i = 1; i < mNumElements; ++i)
         {
-            std::cout << i << "\n";
             difference = std::fabs(current_value);
             if (maximum_difference < difference)
             {

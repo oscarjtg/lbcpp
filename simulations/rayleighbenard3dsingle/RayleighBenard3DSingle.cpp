@@ -9,8 +9,7 @@
 #include "diagnostics/DiagnosticNusselt.h"
 #include "domain/BoundaryInfo.h"
 #include "domain/NodeInfo.h"
-#include "evolver/ScalarEvolverSRT.h"
-#include "evolver/FluidEvolverSRT.h"
+#include "evolver/AllEvolvers.h"
 #include "force/AllForces.h"
 #include "lattice/LatticeSoAPull.h"
 #include "macroscopic/MacroscopicVariable.h"
@@ -23,8 +22,8 @@ template <class T>
 void printAverages(std::string& message, MacroscopicVariable<T>& dens, MacroscopicVariable<T>& velx,
                    MacroscopicVariable<T>& vely, MacroscopicVariable<T>& velz, MacroscopicVariable<T>& temp);
 
-template <class T>
-void saveData(int timstep, std::string& message, AbstractLattice<T>& f, AbstractLattice<T>& g, 
+template <class T, int ND, int NQ_F, int NQ_G>
+void saveData(int timstep, std::string& message, AbstractLattice<T, ND, NQ_F>& f, AbstractLattice<T, ND, NQ_G>& g, 
              MacroscopicVariable<T>& dens, MacroscopicVariable<T>& velx,
              MacroscopicVariable<T>& vely, MacroscopicVariable<T>& velz, MacroscopicVariable<T>& temp);
                    
@@ -40,6 +39,8 @@ void saveMacroscopic(int timstep, std::string& message,
 
 int main(int argc, char* argv[])
 {
+    using dist_type = double; // type alias for distribution functions
+
     double Ra, Pr; // Rayleigh and Prandtl numbers.
     int nx, ny, nz, nt; // Number of grid points and time steps.
     std::string run_id;
@@ -50,17 +51,17 @@ int main(int argc, char* argv[])
 
     // Initialise arrays.
     const int nd = 3, nq_f = 15, nq_g = 6; // Set LB lattice model type.
-    LatticeSoAPull<double> f(nx, ny, nz, nd, nq_f, "f", run_id, save_path);
-    LatticeSoAPull<double> g(nx, ny, nz, nd, nq_g, "g", run_id, save_path);
+    LatticeSoAPull<dist_type, nd, nq_f> f(nx, ny, nz, "f", run_id, save_path);
+    LatticeSoAPull<dist_type, nd, nq_g> g(nx, ny, nz, "g", run_id, save_path);
 
-    MacroscopicVariable<double> dens(nx, ny, nz, "r", run_id, save_path);
-    MacroscopicVariable<double> velx(nx, ny, nz, "u", run_id, save_path);
-    MacroscopicVariable<double> vely(nx, ny, nz, "v", run_id, save_path);
-    MacroscopicVariable<double> velz(nx, ny, nz, "w", run_id, save_path);
-    MacroscopicVariable<double> temp(nx, ny, nz, "t", run_id, save_path);
-    MacroscopicVariable<double> Fx(nx, ny, nz, "Fx", run_id, save_path);
-    MacroscopicVariable<double> Fy(nx, ny, nz, "Fy", run_id, save_path);
-    MacroscopicVariable<double> Fz(nx, ny, nz, "Fz", run_id, save_path);
+    MacroscopicVariable<dist_type> dens(nx, ny, nz, "r", run_id, save_path);
+    MacroscopicVariable<dist_type> velx(nx, ny, nz, "u", run_id, save_path);
+    MacroscopicVariable<dist_type> vely(nx, ny, nz, "v", run_id, save_path);
+    MacroscopicVariable<dist_type> velz(nx, ny, nz, "w", run_id, save_path);
+    MacroscopicVariable<dist_type> temp(nx, ny, nz, "t", run_id, save_path);
+    MacroscopicVariable<dist_type> Fx(nx, ny, nz, "Fx", run_id, save_path);
+    MacroscopicVariable<dist_type> Fy(nx, ny, nz, "Fy", run_id, save_path);
+    MacroscopicVariable<dist_type> Fz(nx, ny, nz, "Fz", run_id, save_path);
 
     double ag, tau_f, tau_g; // Model parameters.
     findGoodModelParameters(ag, tau_f, tau_g, Pr, Ra, nz, f.CSI(), g.CSI());
@@ -112,22 +113,22 @@ int main(int argc, char* argv[])
 
     // Set force information.
     double ag_x = 0, ag_y = 0, ag_z = -std::fabs(ag), ref_temp = 0.5;
-    LinearForceAnomalyTemp<double> force_updater(ag_x, ag_y, ag_z, ref_temp, nx, ny, nz);
+    LinearForceAnomalyTemp<dist_type> force_updater(ag_x, ag_y, ag_z, ref_temp, nx, ny, nz);
     force_updater.UpdateForce(Fx, Fy, Fz, temp);
 
     // Initialise boundary information.
     int num_boundaries = 2;
-    BoundaryInfo<double> bdry_info_f(num_boundaries);
-    BoundaryInfo<double> bdry_info_g(num_boundaries);
+    BoundaryInfo<dist_type, nd, nq_f> bdry_info_f(num_boundaries);
+    BoundaryInfo<dist_type, nd, nq_g> bdry_info_g(num_boundaries);
     NodeInfo node(nx, ny, nz);
 
     // Construct boundary rules.
     double uwall_x = 0.0, uwall_y = 0.0, uwall_z = 0.0;
     double temp_wall_top = 0.0, temp_wall_bot = 1.0;
-    BdryRuleBounceBackTop<double> bdry_top_f(&f, &dens, uwall_x, uwall_y, uwall_z);
-    BdryRuleBounceBackBottom<double> bdry_bot_f(&f, &dens, uwall_x, uwall_y, uwall_z);
-    BdryRuleScalarDirichletTop<double> bdry_top_g(&g, temp_wall_top, uwall_x, uwall_y, uwall_z);
-    BdryRuleScalarDirichletBottom<double> bdry_bot_g(&g, temp_wall_bot, uwall_x, uwall_y, uwall_z);
+    BdryRuleBounceBackTop<dist_type, nd, nq_f> bdry_top_f(&f, &dens, uwall_x, uwall_y, uwall_z);
+    BdryRuleBounceBackBottom<dist_type, nd, nq_f> bdry_bot_f(&f, &dens, uwall_x, uwall_y, uwall_z);
+    BdryRuleScalarDirichletTop<dist_type, nd, nq_g> bdry_top_g(&g, temp_wall_top, uwall_x, uwall_y, uwall_z);
+    BdryRuleScalarDirichletBottom<dist_type, nd, nq_g> bdry_bot_g(&g, temp_wall_bot, uwall_x, uwall_y, uwall_z);
     
     // Add boundary rules.
     // Bottom boundary.
@@ -144,12 +145,12 @@ int main(int argc, char* argv[])
     node.SetBoundaryOnBottom(bdry_id_bot);
     node.SetBoundaryOnTop(bdry_id_top);
 
-    FluidEvolverSRT<double> fluid_evolver;
+    FluidEvolverSRT<dist_type, nd, nq_f> fluid_evolver;
     fluid_evolver.SetKinematicViscosity(f, kinematic_viscosity);
     // Note Fx, Fy, Fz must be initialised (i.e. updated) before the next line!
     fluid_evolver.Initialise(f, dens, velx, vely, velz, Fx, Fy, Fz, node, bdry_info_f);
 
-    ScalarEvolverSRT<double> scalar_evolver;
+    ScalarEvolverSRT<dist_type, nd, nq_g> scalar_evolver;
     scalar_evolver.SetScalarDiffusivity(g, thermal_diffusivity);
     scalar_evolver.Initialise(g, temp, velx, vely, velz, node, bdry_info_g);
 
@@ -161,10 +162,10 @@ int main(int argc, char* argv[])
     printAverages(message_before, dens, velx, vely, velz, temp);
 
     // Diagnostics.
-    DiagnosticNusselt<double> diagnoser(nx, ny, nz, thermal_diffusivity);
+    DiagnosticNusselt<dist_type> diagnoser(nx, ny, nz, thermal_diffusivity);
     double nusselt_number;
     int nNuSamples = 20;
-    ConvergenceTester<double> convergence_tester(nNuSamples);
+    ConvergenceTester<dist_type> convergence_tester(nNuSamples);
 
     // Run algorithm.
     for (int t = 1; t < nt; ++t)
@@ -330,8 +331,8 @@ void printAverages(std::string& message, MacroscopicVariable<T>& dens, Macroscop
     std::cout << "Average temperature = " << temp.ComputeAverage() << "\n";
 }
 
-template <class T>
-void saveData(int timestep, std::string& message, AbstractLattice<T>& f, AbstractLattice<T>& g, 
+template <class T, int ND, int NQ_F, int NQ_G>
+void saveData(int timestep, std::string& message, AbstractLattice<T, ND, NQ_F>& f, AbstractLattice<T, ND, NQ_G>& g, 
              MacroscopicVariable<T>& dens, MacroscopicVariable<T>& velx,
              MacroscopicVariable<T>& vely, MacroscopicVariable<T>& velz, MacroscopicVariable<T>& temp)
 {

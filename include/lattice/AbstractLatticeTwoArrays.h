@@ -5,11 +5,11 @@
 #include <vector>
 #include <string>
 
-template <class T>
-class AbstractLatticeTwoArrays : public AbstractLattice<T>
+template <typename T, int ND, int NQ>
+class AbstractLatticeTwoArrays : public AbstractLattice<T, ND, NQ>
 {
 public:
-    AbstractLatticeTwoArrays(int size_x, int size_y, int size_z, int dims, int vels, std::string id_string = "f", std::string run_id = "test", std::string savepath = "output", int proc_num = 0);
+    AbstractLatticeTwoArrays(int size_x, int size_y, int size_z, std::string id_string = "f", std::string run_id = "test", std::string savepath = "output", int proc_num = 0);
 
     ~AbstractLatticeTwoArrays() = default;
 

@@ -6,7 +6,7 @@
 #include "domain/BoundaryInfo.h"
 #include "domain/NodeInfo.h"
 
-template <class T>
+template <typename T, int ND, int NQ>
 class AbstractFluidEvolver
 {
 public:
@@ -14,11 +14,9 @@ public:
 
     ~AbstractFluidEvolver() = default;
 
-    virtual void SetKinematicViscosity(AbstractLattice<T>& f, T nu) = 0;
+    virtual void SetKinematicViscosity(AbstractLattice<T, ND, NQ>& f, T nu);
 
-    virtual void SetBulkViscosity(AbstractLattice<T>& f, T eta) = 0;
-
-    virtual void Initialise(AbstractLattice<T>& f,
+    virtual void Initialise(AbstractLattice<T, ND, NQ>& f,
                             const MacroscopicVariable<T>& dens,
                             const MacroscopicVariable<T>& velx,
                             const MacroscopicVariable<T>& vely,
@@ -27,9 +25,9 @@ public:
                             const MacroscopicVariable<T>& Fy,
                             const MacroscopicVariable<T>& Fz,
                             const NodeInfo& node,
-                            const BoundaryInfo<T>& bdry) = 0;
+                            const BoundaryInfo<T, ND, NQ>& bdry);
 
-    virtual void DoTimestep(AbstractLattice<T>& f,
+    virtual void DoTimestep(AbstractLattice<T, ND, NQ>& f,
                             MacroscopicVariable<T>& dens,
                             MacroscopicVariable<T>& velx,
                             MacroscopicVariable<T>& vely,
@@ -38,7 +36,14 @@ public:
                             const MacroscopicVariable<T>& Fy,
                             const MacroscopicVariable<T>& Fz,
                             NodeInfo& node,
-                            BoundaryInfo<T>& bdry) = 0;
+                            BoundaryInfo<T, ND, NQ>& bdry);
+
+    virtual void DoLocalCollision(AbstractLattice<T, ND, NQ>& f, std::array<T, NQ> flocal, T r_, T u_, T v_, T w_, T Fx_, T Fy_, T Fz_, int i, int j, int k) = 0;
+
+protected:
+    T mOmega;
 };
+
+#include "AbstractFluidEvolver.tpp"
 
 #endif // ABSTRACTFLUIDEVOLVERDEF

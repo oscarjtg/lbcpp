@@ -1,44 +1,21 @@
+/*
+DO NOT USE -- BLOWS UP!
+*/
+
 #ifndef FluidEvolverSRT3DEF
 #define FluidEvolverSRT3DEF
 
 #include "evolver/AbstractFluidEvolver.h"
 
-template <class T>
-class FluidEvolverSRT3 : public AbstractFluidEvolver<T>
+template <class T, int ND, int NQ>
+class FluidEvolverSRT3 : public AbstractFluidEvolver<T, ND, NQ>
 {
 public:
     FluidEvolverSRT3() = default;
 
     ~FluidEvolverSRT3() = default;
 
-    void SetKinematicViscosity(AbstractLattice<T>& f, T nu) override;
-
-    void SetBulkViscosity(AbstractLattice<T>& f, T eta) override;
-
-    void Initialise(AbstractLattice<T>& f,
-                    const MacroscopicVariable<T>& dens,
-                    const MacroscopicVariable<T>& velx,
-                    const MacroscopicVariable<T>& vely,
-                    const MacroscopicVariable<T>& velz,
-                    const MacroscopicVariable<T>& Fx,
-                    const MacroscopicVariable<T>& Fy,
-                    const MacroscopicVariable<T>& Fz,
-                    const NodeInfo& node,
-                    const BoundaryInfo<T>& bdry) override;
-
-    void DoTimestep(AbstractLattice<T>& f,
-                    MacroscopicVariable<T>& dens,
-                    MacroscopicVariable<T>& velx,
-                    MacroscopicVariable<T>& vely,
-                    MacroscopicVariable<T>& velz,
-                    const MacroscopicVariable<T>& Fx,
-                    const MacroscopicVariable<T>& Fy,
-                    const MacroscopicVariable<T>& Fz,
-                    NodeInfo& node,
-                    BoundaryInfo<T>& bdry) override;
-
-private:
-    T mOmega;
+    virtual void DoLocalCollision(AbstractLattice<T, ND, NQ>& f, std::array<T, NQ> flocal, T r_, T u_, T v_, T w_, T Fx_, T Fy_, T Fz_, int i, int j, int k) override;
 };
 
 #include "evolver/FluidEvolverSRT3.tpp"

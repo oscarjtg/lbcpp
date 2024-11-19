@@ -5,7 +5,7 @@ CXX = g++
 CXXWARN = -Wall -Wextra -Wpedantic #-Werror
 
 # Compiler optimisation flags
-CXXOPT = -O3
+CXXOPT = -O3 -march=native
 
 # Paths to header, source, and object files.
 INCLUDE_PATH = ../../include
