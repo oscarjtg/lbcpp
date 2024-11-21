@@ -20,9 +20,13 @@ void FluidEvolverTRT<T, ND, NQ>::DoLocalCollision(AbstractLattice<T, ND, NQ>& f,
     // Calculate u dot F, scaled by lattice speed of sound.
     T uF = (u_*Fx_ + v_*Fy_ + w_*Fz_) * f.CSI();
 
-    // Do SRT collision.
+    // Do TRT collision.
     for (int q = 0; q < NQ; ++q)
     {
+        if (q > f.QRev(q))
+        {
+            continue; // skip loop.
+        }
         // Compute c dot u, scaled by lattice speed of sound.
         T cu = (u_ * f.CX(q) + v_ * f.CY(q) + w_ * f.CZ(q)) * f.CSI();
         // Compute c dot F, scaled by lattice speed of sound.
@@ -57,5 +61,22 @@ void FluidEvolverTRT<T, ND, NQ>::DoLocalCollision(AbstractLattice<T, ND, NQ>& f,
 
         // Save the post-collision value.
         f.SetCurrFStar(fstar, q, i, j, k);
+
+        if (q == f.QRev(q))
+        {
+            continue;
+        }
+
+        // Compute post-collision for fbar with TRT operator.
+        T fstar_bar = (
+            flocal[f.QRev(q)] 
+            + mOmegaPlus * (feq_plus - f_plus) 
+            - mOmegaMinus * (feq_minus - f_minus)
+            + (static_cast<T>(1.0) - static_cast<T>(0.5) * mOmegaPlus) * force_source_plus
+            - (static_cast<T>(1.0) - static_cast<T>(0.5) * mOmegaMinus) * force_source_minus
+        );
+
+        // Save the post-collision value.
+        f.SetCurrFStar(fstar_bar, f.QRev(q), i, j, k);
     }
 }

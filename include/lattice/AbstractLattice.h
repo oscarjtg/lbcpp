@@ -138,6 +138,9 @@ public:
     inline T W(int q) const { return mLP.mW[q]; }
     inline int QRev(int q) const { return mLP.mQRev[q]; }
     inline T CSI() const { return mLP.mCSI; }
+    inline int GetNX() const { return mSizeX; }
+    inline int GetNY() const { return mSizeY; }
+    inline int GetNZ() const { return mSizeZ; }
 
 protected:
     const int mSizeX, mSizeY, mSizeZ, mGridSize;

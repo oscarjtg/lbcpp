@@ -5,29 +5,29 @@
 
 #include "macroscopic/MacroscopicVariable.h"
 
-template <class T>
+template <typename T>
 MacroscopicVariable<T>::MacroscopicVariable(int size_x, int size_y, int size_z, std::string id_string, std::string run_id, std::string savepath, int proc_num) 
     : mSizeX(size_x), mSizeY(size_y), mSizeZ(size_z), mGridSize(size_x*size_y*size_z), mIDString(id_string), mRunID(run_id), mSaveDirectory(savepath), mProcessNumber(proc_num), mArray(size_x*size_y*size_z) {}
 
-template <class T>
+template <typename T>
 T MacroscopicVariable<T>::GetValue(int i, int j, int k) const
 {
     return mArray[idx(i, j, k)];
 }
 
-template <class T>
+template <typename T>
 void MacroscopicVariable<T>::SetValue(T value, int i, int j, int k)
 {
     mArray[idx(i, j, k)] = value;
 }
 
-template <class T>
+template <typename T>
 void MacroscopicVariable<T>::AddToValue(T additive_value, int i, int j, int k)
 {
     mArray[idx(i, j, k)] += additive_value;
 }
 
-template <class T>
+template <typename T>
 void MacroscopicVariable<T>::SetToConstantValue(T value)
 {
     for (int k = 0; k < mSizeZ; ++k)
@@ -42,7 +42,7 @@ void MacroscopicVariable<T>::SetToConstantValue(T value)
     }
 }
 
-template <class T>
+template <typename T>
 void MacroscopicVariable<T>::SetLinearGradientZ(T bottom, T top)
 {
     for (int k = 0; k < mSizeZ; ++k)
@@ -58,7 +58,7 @@ void MacroscopicVariable<T>::SetLinearGradientZ(T bottom, T top)
     }
 }
 
-template <class T>
+template <typename T>
 T MacroscopicVariable<T>::ComputeAverage() const
 {
     double sum = 0.0;
@@ -78,7 +78,7 @@ T MacroscopicVariable<T>::ComputeAverage() const
     return static_cast<T>(average);
 }
 
-template <class T>
+template <typename T>
 void MacroscopicVariable<T>::DisplayInfo() const
 {   
     std::cout << "--------------------------------------------\n";
@@ -91,7 +91,7 @@ void MacroscopicVariable<T>::DisplayInfo() const
     std::cout << "--------------------------------------------\n";
 }
 
-template <class T>
+template <typename T>
 void MacroscopicVariable<T>::WriteToTextFile(const int timestep) const
 {
     std::string basepath = construct_basepath(timestep);
@@ -132,7 +132,7 @@ void MacroscopicVariable<T>::WriteToTextFile(const int timestep) const
  * @param timestep An optional integer representing the timestep. Default is 0.
  * @return string basepath.
  */
- template<class T>
+ template<typename T>
 std::string MacroscopicVariable<T>::construct_basepath(const int timestep) const
 {
     std::ostringstream oss;

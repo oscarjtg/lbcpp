@@ -7,6 +7,10 @@ void AbstractFluidEvolver<T, ND, NQ>::SetKinematicViscosity(AbstractLattice<T, N
     this->mOmega = 1/tau;
 }
 
+/**
+ * @brief Feq initialisation. 
+ * Note that initialised distributions correspond to pre-collision populations.
+ */
 template <typename T, int ND, int NQ>
 void AbstractFluidEvolver<T, ND, NQ>::Initialise(AbstractLattice<T, ND, NQ>& f,
                                     const MacroscopicVariable<T>& dens,
@@ -35,33 +39,37 @@ void AbstractFluidEvolver<T, ND, NQ>::Initialise(AbstractLattice<T, ND, NQ>& f,
                     T Fx_ = Fx.GetValue(i, j, k);
                     T Fy_ = Fy.GetValue(i, j, k);
                     T Fz_ = Fz.GetValue(i, j, k);
+                    //std::cout << r_ << ", " << u_ << ", " << v_ << ", " << w_ << ", " << Fx_ << ", " << Fy_ << ", " << Fz_ << std::endl;
 
                     // Values for equilibrium are different because of force term!
                     T u_eq = u_ - 0.5 * Fx_ / r_;
                     T v_eq = v_ - 0.5 * Fy_ / r_;
                     T w_eq = w_ - 0.5 * Fz_ / r_;
-                    T vel_squared = u_eq*u_eq + v_eq*v_eq + w_eq*w_eq;
+                    T vel_squared = (u_eq*u_eq + v_eq*v_eq + w_eq*w_eq) * f.CSI();
 
                     // Check that moments sum correctly.
-                    T rstar_ = 0;
+                    //T rstar_ = 0;
                     for (int q = 0; q < NQ; ++q)
                     {
-                        T vel_projection = u_eq * f.CX(q) + v_eq * f.CY(q) + w_eq * f.CZ(q);
+                        T vel_projection = (u_eq * f.CX(q) + v_eq * f.CY(q) + w_eq * f.CZ(q)) * f.CSI();
                         T fstar = computeSecondOrderEquilibrium(r_, vel_projection, vel_squared, f.W(q));
-                        f.SetCurrFStar(fstar, q, i, j, k);
-                        rstar_ += fstar;
+                        f.SetCurrF(fstar, q, i, j, k);
+                        //rstar_ += fstar;
                     }
+                    //std::cout << "before, after\n";
+                    //std::cout << r_ << ", " << rstar_ << std::endl;
                 }
                 else
                 {
                     for (int q = 0; q < NQ; ++q)
                     {
-                        f.SetCurrFStar(0, q, i, j, k);
+                        f.SetCurrF(0, q, i, j, k);
                     }
                 }
             }
         }
     }
+    f.StreamDistributions();
 }
 
 template <typename T, int ND, int NQ>

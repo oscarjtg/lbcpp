@@ -33,10 +33,10 @@ nx, ny, nz = map(int, lines[0].strip().split(','))
 data = np.array(list(map(float, lines[1].strip().split(','))))
 
 # Reshape data according to nx, ny, nz
-data = data.reshape((nx, ny, nz))
+data = data.reshape((nz, nx, ny))
 
 # Extract the slice for the given y value
-data_slice = data[:, y_value, :]
+data_slice = data[:, :, y_value]
 
 # Calculate the average vertical Density profile
 average_profile = np.mean(data_slice, axis=1)

@@ -2,3 +2,4 @@
 #include "FluidEvolverTRT.h"
 #include "ScalarEvolverSRT1.h"
 #include "ScalarEvolverSRT.h"
+#include "ScalarEvolverTRT.h"

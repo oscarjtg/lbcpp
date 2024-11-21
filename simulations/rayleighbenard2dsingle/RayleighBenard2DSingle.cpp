@@ -101,7 +101,7 @@ int main(int argc, char* argv[])
     int k_mid = nz / 2;
     for (int i = 0; i < nx; ++ i)
     {
-        double eps = 1.0e-2;
+        double eps = 10.0e-2;
         double x = 2 * M_PI * i / nx;
         double perturbation = eps * cos(x);
         temp.AddToValue(perturbation, i, 0, k_mid);
@@ -142,13 +142,14 @@ int main(int argc, char* argv[])
     node.SetBoundaryOnBottom(bdry_id_bot);
     node.SetBoundaryOnTop(bdry_id_top);
 
-    FluidEvolverTRT<dist_type, nd, nq_f> fluid_evolver;
-    fluid_evolver.SetMagicParameter(1./12.);
+    FluidEvolverSRT<dist_type, nd, nq_f> fluid_evolver;
+    //fluid_evolver.SetMagicParameter(1./12.);
     fluid_evolver.SetKinematicViscosity(f, kinematic_viscosity);
     // Note Fx, Fy, Fz must be initialised (i.e. updated) before the next line!
     fluid_evolver.Initialise(f, dens, velx, vely, velz, Fx, Fy, Fz, node, bdry_info_f);
 
-    ScalarEvolverSRT<dist_type, nd, nq_g> scalar_evolver;
+    ScalarEvolverSRT1<dist_type, nd, nq_g> scalar_evolver;
+    //scalar_evolver.SetMagicParameter(1./4.);
     scalar_evolver.SetScalarDiffusivity(g, thermal_diffusivity);
     scalar_evolver.Initialise(g, temp, velx, vely, velz, node, bdry_info_g);
 

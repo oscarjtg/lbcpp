@@ -4,7 +4,7 @@
 #include <vector>
 #include <string>
 
-template <class T>
+template <typename T>
 class MacroscopicVariable
 {
 public:
@@ -27,6 +27,10 @@ public:
     void DisplayInfo() const;
 
     void WriteToTextFile(const int timestep = 0) const;
+
+    inline int GetNX() const { return mSizeX; }
+    inline int GetNY() const { return mSizeY; }
+    inline int GetNZ() const { return mSizeZ; }
 
 private:
     const int mSizeX, mSizeY, mSizeZ, mGridSize;

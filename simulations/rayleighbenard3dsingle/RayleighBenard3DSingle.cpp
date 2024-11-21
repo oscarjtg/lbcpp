@@ -18,16 +18,16 @@ void getInputParameters(double& rayleigh_number, double& prandtl_number, int& nx
 
 void findGoodModelParameters(double& ag, double& tau_f, double& tau_g, const double Pr, const double Ra, const int ny, const double csi_f, const double csi_g);
 
-template <class T>
+template <typename T>
 void printAverages(std::string& message, MacroscopicVariable<T>& dens, MacroscopicVariable<T>& velx,
                    MacroscopicVariable<T>& vely, MacroscopicVariable<T>& velz, MacroscopicVariable<T>& temp);
 
-template <class T, int ND, int NQ_F, int NQ_G>
+template <typename T, int ND, int NQ_F, int NQ_G>
 void saveData(int timstep, std::string& message, AbstractLattice<T, ND, NQ_F>& f, AbstractLattice<T, ND, NQ_G>& g, 
              MacroscopicVariable<T>& dens, MacroscopicVariable<T>& velx,
              MacroscopicVariable<T>& vely, MacroscopicVariable<T>& velz, MacroscopicVariable<T>& temp);
                    
-template <class T>
+template <typename T>
 void saveMacroscopic(int timstep, std::string& message, 
              MacroscopicVariable<T>& dens, MacroscopicVariable<T>& velx,
              MacroscopicVariable<T>& vely, MacroscopicVariable<T>& velz, MacroscopicVariable<T>& temp);
@@ -319,7 +319,7 @@ void findGoodModelParameters(double& alpha_g, double& tau_f, double& tau_g, cons
     exit(EXIT_FAILURE); // Terminate the program.
 }
 
-template <class T>
+template <typename T>
 void printAverages(std::string& message, MacroscopicVariable<T>& dens, MacroscopicVariable<T>& velx,
                    MacroscopicVariable<T>& vely, MacroscopicVariable<T>& velz, MacroscopicVariable<T>& temp)
 {
@@ -331,7 +331,7 @@ void printAverages(std::string& message, MacroscopicVariable<T>& dens, Macroscop
     std::cout << "Average temperature = " << temp.ComputeAverage() << "\n";
 }
 
-template <class T, int ND, int NQ_F, int NQ_G>
+template <typename T, int ND, int NQ_F, int NQ_G>
 void saveData(int timestep, std::string& message, AbstractLattice<T, ND, NQ_F>& f, AbstractLattice<T, ND, NQ_G>& g, 
              MacroscopicVariable<T>& dens, MacroscopicVariable<T>& velx,
              MacroscopicVariable<T>& vely, MacroscopicVariable<T>& velz, MacroscopicVariable<T>& temp)
@@ -346,7 +346,7 @@ void saveData(int timestep, std::string& message, AbstractLattice<T, ND, NQ_F>& 
     std::cout << message;
 }
 
-template <class T>
+template <typename T>
 void saveMacroscopic(int timestep, std::string& message, 
              MacroscopicVariable<T>& dens, MacroscopicVariable<T>& velx,
              MacroscopicVariable<T>& vely, MacroscopicVariable<T>& velz, MacroscopicVariable<T>& temp)

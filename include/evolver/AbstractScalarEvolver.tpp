@@ -33,24 +33,25 @@ void AbstractScalarEvolver<T, ND, NQ>::Initialise(AbstractLattice<T, ND, NQ>& g,
                     T u_ = velx.GetValue(i, j, k);
                     T v_ = vely.GetValue(i, j, k);
                     T w_ = velz.GetValue(i, j, k);
-                    T vel_squared = u_*u_ + v_*v_ + w_*w_;
+                    T vel_squared = (u_*u_ + v_*v_ + w_*w_)*g.CSI();
                     for (int q = 0; q < NQ; ++q)
                     {
-                        T vel_projection = u_ * g.CX(q) + v_ * g.CY(q) + w_ * g.CZ(q);
+                        T vel_projection = (u_ * g.CX(q) + v_ * g.CY(q) + w_ * g.CZ(q))*g.CSI();
                         T gstar = computeSecondOrderEquilibrium(c_, vel_projection, vel_squared, g.W(q));
-                        g.SetCurrFStar(gstar, q, i, j, k);
+                        g.SetCurrF(gstar, q, i, j, k);
                     }
                 }
                 else
                 {
                     for (int q = 0; q < NQ; ++ q)
                     {
-                        g.SetCurrFStar(0, q, i, j, k);
+                        g.SetCurrF(0, q, i, j, k);
                     }
                 }
             }
         }
     }
+    g.StreamDistributions();
 }
 
 template <typename T, int ND, int NQ>
@@ -125,6 +126,8 @@ void AbstractScalarEvolver<T, ND, NQ>::DoTimestep(AbstractLattice<T, ND, NQ>& g,
                 T v_ = vely.GetValue(i, j, k);
                 T w_ = velz.GetValue(i, j, k);
 
+                DoLocalCollision(g, glocal, c_, u_, v_, w_, i, j, k);
+                /*
                 // Calculate velocity magnitude squared, scaled by lattice speed of sound.
                 T usq = (u_*u_ + v_*v_ + w_*w_) * g.CSI();
 
@@ -141,6 +144,7 @@ void AbstractScalarEvolver<T, ND, NQ>::DoTimestep(AbstractLattice<T, ND, NQ>& g,
                     // Save the post-collision value.
                     g.SetCurrFStar(gstar, q, i, j, k);
                 }
+                */
             }
         }
     }

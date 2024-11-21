@@ -5,7 +5,7 @@
 
 #include "macroscopic/MacroscopicVariable.h"
 
-template <class T>
+template <typename T>
 class DiagnosticNusselt
 {
 public:
