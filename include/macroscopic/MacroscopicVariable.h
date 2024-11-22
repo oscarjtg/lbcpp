@@ -16,6 +16,10 @@ public:
 
     void SetValue(T value, int i, int j, int k);
 
+    T GetValueWrap(int i, int j, int k) const;
+
+    void SetValueWrap(T value, int i, int j, int k);
+
     void AddToValue(T additive_value, int i, int j, int k);
 
     void SetToConstantValue(T value);

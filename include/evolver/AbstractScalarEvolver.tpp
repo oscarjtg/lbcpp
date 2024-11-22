@@ -10,6 +10,7 @@ void AbstractScalarEvolver<T, ND, NQ>::SetScalarDiffusivity(AbstractLattice<T, N
 {
     T tau = g.CSI() * kappa + 0.5;
     mOmega = 1 / tau;
+    std::cout << "Scalar evolver tau = " << tau << ", omega = " << mOmega << "\n";
 }
 
 template <typename T, int ND, int NQ>

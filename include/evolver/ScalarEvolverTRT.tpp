@@ -8,6 +8,11 @@ void ScalarEvolverTRT<T, ND, NQ>::SetScalarDiffusivity(AbstractLattice<T, ND, NQ
     mOmegaPlus = static_cast<T>(1.0) / tau_plus;
     T tau_minus = mMagicParameter / (tau_plus - 0.5) + 0.5;
     mOmegaMinus = static_cast<T>(1.0) / tau_minus;
+    std::cout << "Scalar evolver parameters:\n";
+    std::cout << "Magic parameter = " << mMagicParameter << "\n";
+    std::cout << "tau+ = " << tau_plus << ", omega+ = " << mOmegaPlus << "\n";
+    std::cout << "tau- = " << tau_minus << ", omega- = " << mOmegaMinus << "\n";
+    std::cout << std::flush;
 }
 
 template <typename T, int ND, int NQ>

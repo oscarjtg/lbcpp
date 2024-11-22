@@ -27,6 +27,28 @@ public:
                             const NodeInfo& node,
                             const BoundaryInfo<T, ND, NQ>& bdry);
 
+    virtual void InitialiseEquilibrium(AbstractLattice<T, ND, NQ>& f,
+                            const MacroscopicVariable<T>& dens,
+                            const MacroscopicVariable<T>& velx,
+                            const MacroscopicVariable<T>& vely,
+                            const MacroscopicVariable<T>& velz,
+                            const MacroscopicVariable<T>& Fx,
+                            const MacroscopicVariable<T>& Fy,
+                            const MacroscopicVariable<T>& Fz,
+                            const NodeInfo& node,
+                            const BoundaryInfo<T, ND, NQ>& bdry);
+
+    virtual void InitialiseWei(AbstractLattice<T, ND, NQ>& f,
+                            const MacroscopicVariable<T>& dens,
+                            const MacroscopicVariable<T>& velx,
+                            const MacroscopicVariable<T>& vely,
+                            const MacroscopicVariable<T>& velz,
+                            const MacroscopicVariable<T>& Fx,
+                            const MacroscopicVariable<T>& Fy,
+                            const MacroscopicVariable<T>& Fz,
+                            const NodeInfo& node,
+                            const BoundaryInfo<T, ND, NQ>& bdry);
+
     virtual void DoTimestep(AbstractLattice<T, ND, NQ>& f,
                             MacroscopicVariable<T>& dens,
                             MacroscopicVariable<T>& velx,

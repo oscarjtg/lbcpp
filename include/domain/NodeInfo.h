@@ -154,6 +154,23 @@ public:
         return mCellTypeArray[idx(i, j, k)] == mGas;
     }
 
+    bool IsFluidWrap(int i, int j, int k) const
+    {
+        return mCellTypeArray[idx_wrap(i, j, k)] == mFluid;
+    }
+
+    bool IsFluid_NoWrapAllowed(int i, int j, int k) const
+    {
+        if (i < 0 || i >= mSizeX || j < 0 || j >= mSizeY || k < 0 || k >= mSizeZ)
+        {
+            return false;
+        }
+        else
+        {
+            return mCellTypeArray[idx_wrap(i, j, k)] == mFluid;
+        }
+    }
+
     inline int GetNX() const
     {
         return mSizeX;
@@ -183,6 +200,14 @@ private:
     inline int idx(int i, int j, int k) const
     {
         return i + mSizeX * j + mSizeX * mSizeY * k;
+    }
+
+    int idx_wrap(int i, int j, int k) const
+    {
+        int ii = (i + mSizeX) % mSizeX;
+        int jj = (j + mSizeY) % mSizeY;
+        int kk = (k + mSizeZ) % mSizeZ;
+        return idx(ii, jj, kk);
     }
 };
 

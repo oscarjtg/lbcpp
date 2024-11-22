@@ -22,6 +22,24 @@ void MacroscopicVariable<T>::SetValue(T value, int i, int j, int k)
 }
 
 template <typename T>
+T MacroscopicVariable<T>::GetValueWrap(int i, int j, int k) const
+{
+    int ii = (i + mSizeX) % mSizeX;
+    int jj = (j + mSizeY) % mSizeY;
+    int kk = (k + mSizeZ) % mSizeZ;
+    return mArray[idx(ii, jj, kk)];
+}
+
+template <typename T>
+void MacroscopicVariable<T>::SetValueWrap(T value, int i, int j, int k)
+{
+    int ii = (i + mSizeX) % mSizeX;
+    int jj = (j + mSizeY) % mSizeY;
+    int kk = (k + mSizeZ) % mSizeZ;
+    mArray[idx(ii, jj, kk)] = value;
+}
+
+template <typename T>
 void MacroscopicVariable<T>::AddToValue(T additive_value, int i, int j, int k)
 {
     mArray[idx(i, j, k)] += additive_value;
