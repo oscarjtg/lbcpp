@@ -4,7 +4,7 @@
 /**
  * @brief Computes the first order equilibrium distribution function.
  *
- * @param density The fluid density at a given grid cell.
+ * @param density The fluid density at a given grid cell, calculated as sum f_i.
  * @param velocityProjection The projection of fluid velocity on a lattice vector, multiplied by c_s^-2.
  * @param latticeWeight The lattice weight corresponding to the fluid density.
  *
@@ -22,7 +22,7 @@ inline T computeFirstOrderEquilibrium(
 /**
  * @brief Computes the second order equilibrium distribution function.
  *
- * @param density The fluid density at a given grid cell, calculated as 1 + sum df.
+ * @param density The fluid density at a given grid cell, calculated as sum f_i.
  * @param velocityProjection The projection of fluid velocity on a lattice vector, multiplied by c_s^-2.
  * @param velocityMagnitudeSquared The square of the fluid velocity, multiplied by c_s^-2.
  * @param latticeWeight The lattice weight corresponding to the fluid density.
@@ -48,7 +48,7 @@ inline T computeSecondOrderEquilibrium(
 /**
  * @brief Computes the third order equilibrium distribution function. Mohamad textbook, p. 38
  *
- * @param density The fluid density at a given grid cell, calculated as 1 + sum df.
+ * @param density The fluid density at a given grid cell, calculated as sum f_i.
  * @param velocityProjection The projection of fluid velocity on a lattice vector, multiplied by c_s^-2.
  * @param velocityMagnitudeSquared The square of the fluid velocity, multiplied by c_s^-2.
  * @param latticeWeight The lattice weight corresponding to the fluid density.
@@ -114,6 +114,31 @@ inline T computeSecondOrderDeviationEquilibrium(
     T latticeWeight)
 {
     return density * latticeWeight * (static_cast<T>(4.5) * velocityProjection * velocityProjection - static_cast<T>(1.5) * velocityMagnitudeSquared + static_cast<T>(3.0) * velocityProjection) + densityAnomaly * latticeWeight;
+}
+
+/**
+ * @brief Computes the second order equilibrium distribution function.
+ *
+ * @param density The fluid density at a given grid cell, calculated as sum f_i.
+ * @param velocityProjection The projection of fluid velocity on a lattice vector, multiplied by c_s^-2.
+ * @param velocityMagnitudeSquared The square of the fluid velocity, multiplied by c_s^-2.
+ * @param latticeWeight The lattice weight corresponding to the fluid density.
+ *
+ * @return The correponding second order equilibrium distribution function value.
+ */
+template<class T>
+inline T computeSecondOrderIncompressibleEquilibrium(
+    T density, 
+    T velocityProjection, 
+    T velocityMagnitudeSquared,
+    T latticeWeight)
+{
+    return density * latticeWeight + latticeWeight * (  // Note rho_0 = 1.0;
+        velocityProjection
+        + static_cast<T>(0.5) * (
+            velocityProjection * velocityProjection - velocityMagnitudeSquared
+        )
+    );
 }
 
 

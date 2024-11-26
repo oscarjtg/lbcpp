@@ -44,7 +44,8 @@ void PrintAverages(std::string& message, MacroscopicVariable<T>& dens, Macroscop
 int main()
 {
     // Set parameters. All in lattice units.
-    using dfType = double;
+    using dfType = double; std::cout << "Double precision (F64)\n";
+    //using dfType = float; std::cout << "Single precision (F32)\n";
     const int nd = 2, nq = 9;
     const int nx = 72, ny = 1, nz = 96;
     const double nu = 0.1; //, tau = 0.8; // D2Q9 lattice, cs = 1/sqrt(3).
@@ -56,8 +57,12 @@ int main()
     const double td = 1.0 / (nu * (kx*kx + ky*ky));    // evaluates to 840 time steps.
     const double dt = 1.0; // dx = 1.0, 
 
-    std::string run_id = "0001";
+    std::string run_id = "SRTxx_WEI_F64";
     std::string savepath = "output";
+
+    std::cout << "~~~~~~~~~~~~~~~~~\n";
+    std::cout << run_id << "\n";
+    std::cout << "~~~~~~~~~~~~~~~~~\n";
 
     // Declare arrays.
     LatticeSoAPull<dfType, nd, nq> f(nx, ny, nz, "f", run_id, savepath);
@@ -69,9 +74,16 @@ int main()
     MacroscopicVariable<dfType> Fy(nx, ny, nz, "Fx", run_id, savepath);
     MacroscopicVariable<dfType> Fz(nx, ny, nz, "Fx", run_id, savepath);
 
-    // Declare evolver.
-    FluidEvolverSRT<dfType, nd, nq> fluid_evolver;
-    //fluid_evolver.SetMagicParameter(1./12.);
+    /****************************************************************************************
+     * 
+     * Declare collision operator.
+     * 
+     ***************************************************************************************/
+    FluidEvolverSRT<dfType, nd, nq> fluid_evolver; // SRTxx
+    //FluidEvolverTRT<dfType, nd, nq> fluid_evolver; // TRT
+    //fluid_evolver.SetMagicParameter(1./4.);        // TRT04
+    //fluid_evolver.SetMagicParameter(1./12.);       // TRT12
+    
     fluid_evolver.SetKinematicViscosity(f, nu);
 
     // Declare node and boundary info.
@@ -105,8 +117,14 @@ int main()
     Fy.SetToConstantValue(0.0);
     Fz.SetToConstantValue(0.0);
 
-    // Initialise the distribution functions.
-    fluid_evolver.Initialise(f, dens, velx, vely, velz, Fx, Fy, Fz, node, bdry);
+    /****************************************************************************************
+     * 
+     * Initialise the distribution functions.
+     * 
+     ***************************************************************************************/
+    //fluid_evolver.InitialiseEquilibrium(f, dens, velx, vely, velz, Fx, Fy, Fz, node, bdry); // FEQ
+    //fluid_evolver.Initialise(f, dens, velx, vely, velz, Fx, Fy, Fz, node, bdry);          // NEQ
+    fluid_evolver.InitialiseWei(f, dens, velx, vely, velz, Fx, Fy, Fz, node, bdry);       // WEI
 
     // Open file for writing.
     std::ofstream write_l2error(savepath+"/"+run_id+"_l2error.csv");
@@ -147,9 +165,9 @@ int main()
         auto compute_velx = std::bind(ComputeTaylorGreenVelocityX, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, t, td, u0, kx, ky);
         auto compute_vely = std::bind(ComputeTaylorGreenVelocityY, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, t, td, u0, kx, ky);
 
-        double l2error_r = ComputeL2ErrorScalar(dens, compute_density);
-        double l2error_u = ComputeL2ErrorScalar(velx, compute_velx);
-        double l2error_v = ComputeL2ErrorScalar(velz, compute_vely);
+        l2error_r = ComputeL2ErrorScalar(dens, compute_density);
+        l2error_u = ComputeL2ErrorScalar(velx, compute_velx);
+        l2error_v = ComputeL2ErrorScalar(velz, compute_vely);
 
         // Save to file.
         write_l2error << t << "," << l2error_r << "," << l2error_u << "," << l2error_v << std::endl;
@@ -164,6 +182,8 @@ int main()
 
     msg = "End";
     SaveMacroscopic(td, msg, dens, velx, velz);
+
+    std::cout << td << "," << l2error_r << "," << l2error_u << "," << l2error_v << std::endl;
 
     return 0;
 }

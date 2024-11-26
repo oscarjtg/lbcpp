@@ -2,7 +2,7 @@
 CXX = g++
 
 # Compiler warning flags
-CXXWARN = -Wall -Wextra -Wpedantic #-Werror
+CXXWARN = -Wall -Wextra -Wpedantic -Werror
 
 # Compiler optimisation flags
 CXXOPT = -O3 -march=native

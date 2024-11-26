@@ -120,7 +120,7 @@ double ComputeL2ErrorDistribution(AbstractLattice<T, ND, NQ> &f)
                     double f_prev = f.GetPrevFStar(q, i, j, k);
                     double diff = f_curr - f_prev;
                     numerator += diff * diff;
-                    denominator += f_prev * f_prev;
+                    denominator += f_curr * f_curr;
                 }
             }
         }

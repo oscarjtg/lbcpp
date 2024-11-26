@@ -6,8 +6,8 @@
 
 #define DEBUG false
 
-template <typename T, int ND, int NQ>
-void FluidEvolverSRT<T, ND, NQ>::DoLocalCollision(AbstractLattice<T, ND, NQ>& f, std::array<T, NQ> flocal, T r_, T u_, T v_, T w_, T Fx_, T Fy_, T Fz_, int i, int j, int k)
+template <typename T, int ND, int NQ> 
+void FluidEvolverSRT<T, ND, NQ>::DoLocalCollision(std::function<T(T, T, T, T)> ComputeEquilibrium, AbstractLattice<T, ND, NQ>& f, std::array<T, NQ> flocal, T r_, T u_, T v_, T w_, T Fx_, T Fy_, T Fz_, int i, int j, int k)
 {
     // Calculate velocity magnitude squared, scaled by lattice speed of sound.
     T usq = (u_*u_ + v_*v_ + w_*w_) * f.CSI();
@@ -29,7 +29,7 @@ void FluidEvolverSRT<T, ND, NQ>::DoLocalCollision(AbstractLattice<T, ND, NQ>& f,
         T cF = (Fx_ * f.CX(q) + Fy_ * f.CY(q) + Fz_ * f.CZ(q)) * f.CSI();
 
         // Compute equilibrium distribution.
-        T feq = computeSecondOrderEquilibrium(r_, cu, usq, f.W(q));
+        T feq = ComputeEquilibrium(r_, cu, usq, f.W(q));
         // Compute the force source term.
         T force_source = computeSecondOrderForceSource(cu, cF, uF, f.W(q));
 
