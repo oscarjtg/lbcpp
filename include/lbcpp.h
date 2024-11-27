@@ -1,4 +1,5 @@
 #include "boundary/AllBoundaryRules.h"
+#include "compute/ComputeStress.h"
 #include "convergence/ConvergenceTester.h"
 #include "diagnostics/AllDiagnostics.h"
 #include "domain/BoundaryInfo.h"
@@ -6,4 +7,4 @@
 #include "evolver/AllEvolvers.h"
 #include "force/AllForces.h"
 #include "lattice/AllLatices.h"
-#include "macroscopic/MacroscopicVariable.h"
+#include "macroscopic/AllFields.h"

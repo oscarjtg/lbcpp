@@ -1,11 +1,12 @@
+#include "lattice/AbstractLattice.h"
+
+#include <cassert>
 #include <iostream>
 #include <iomanip>
 #include <sstream>
 #include <fstream>
 #include <stdexcept>
 #include <array>
-
-#include "lattice/AbstractLattice.h"
 
 // Overriden constructor
 template <typename T, int ND, int NQ>
@@ -149,5 +150,26 @@ void AbstractLattice<T, ND, NQ>::write_txt(const std::string& path, T (AbstractL
     else 
     {
         throw std::runtime_error("Unable to open file: " + path);
+    }
+}
+
+template <typename T, int ND, int NQ>
+T AbstractLattice<T, ND, NQ>::GetCqa(const int q, const int component_idx) const
+{
+    assert (component_idx > -1);
+    assert (component_idx < 3);
+    switch (component_idx)
+    {
+    case 0:
+        return static_cast<T>(mLP.mEX[q]);
+
+    case 1:
+        return static_cast<T>(mLP.mEY[q]);
+
+    case 2:
+        return static_cast<T>(mLP.mEZ[q]);
+    
+    default:
+        return static_cast<T>(0.0);
     }
 }

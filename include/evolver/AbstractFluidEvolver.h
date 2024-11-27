@@ -2,7 +2,7 @@
 #define ABSTRACTFLUIDEVOLVERDEF
 
 #include "lattice/AbstractLattice.h"
-#include "macroscopic/MacroscopicVariable.h"
+#include "macroscopic/AllFields.h"
 #include "domain/BoundaryInfo.h"
 #include "domain/NodeInfo.h"
 
@@ -19,64 +19,58 @@ public:
     virtual void SetKinematicViscosity(AbstractLattice<T, ND, NQ>& f, T nu);
 
     virtual void Initialise(AbstractLattice<T, ND, NQ>& f,
-                            const MacroscopicVariable<T>& dens,
-                            const MacroscopicVariable<T>& velx,
-                            const MacroscopicVariable<T>& vely,
-                            const MacroscopicVariable<T>& velz,
-                            const MacroscopicVariable<T>& Fx,
-                            const MacroscopicVariable<T>& Fy,
-                            const MacroscopicVariable<T>& Fz,
+                            const ScalarField<T>& dens,
+                            const VectorField<T>& vel,
+                            const VectorField<T>& force,
                             const NodeInfo& node,
                             const BoundaryInfo<T, ND, NQ>& bdry);
 
     virtual void InitialiseEquilibrium(AbstractLattice<T, ND, NQ>& f,
-                            const MacroscopicVariable<T>& dens,
-                            const MacroscopicVariable<T>& velx,
-                            const MacroscopicVariable<T>& vely,
-                            const MacroscopicVariable<T>& velz,
-                            const MacroscopicVariable<T>& Fx,
-                            const MacroscopicVariable<T>& Fy,
-                            const MacroscopicVariable<T>& Fz,
+                            const ScalarField<T>& dens,
+                            const VectorField<T>& vel,
+                            const VectorField<T>& force,
                             const NodeInfo& node,
                             const BoundaryInfo<T, ND, NQ>& bdry);
 
-    virtual void InitialiseWei(AbstractLattice<T, ND, NQ>& f,
-                            MacroscopicVariable<T>& dens,
-                            const MacroscopicVariable<T>& velx,
-                            const MacroscopicVariable<T>& vely,
-                            const MacroscopicVariable<T>& velz,
-                            const MacroscopicVariable<T>& Fx,
-                            const MacroscopicVariable<T>& Fy,
-                            const MacroscopicVariable<T>& Fz,
+    virtual void InitialiseMei(AbstractLattice<T, ND, NQ>& f,
+                            ScalarField<T>& dens,
+                            const VectorField<T>& vel,
+                            const VectorField<T>& force,
                             const NodeInfo& node,
                             const BoundaryInfo<T, ND, NQ>& bdry);
 
     virtual void DoTimestep(AbstractLattice<T, ND, NQ>& f,
-                            MacroscopicVariable<T>& dens,
-                            MacroscopicVariable<T>& velx,
-                            MacroscopicVariable<T>& vely,
-                            MacroscopicVariable<T>& velz,
-                            const MacroscopicVariable<T>& Fx,
-                            const MacroscopicVariable<T>& Fy,
-                            const MacroscopicVariable<T>& Fz,
+                            ScalarField<T>& dens,
+                            VectorField<T>& vel,
+                            const VectorField<T>& force,
                             NodeInfo& node,
-                            BoundaryInfo<T, ND, NQ>& bdry);
+                            BoundaryInfo<T, ND, NQ>& bdry,
+                            const bool StoreMacros=true);
+
+    virtual void DoTimestep(AbstractLattice<T, ND, NQ>& f,
+                            ScalarField<T>& dens,
+                            VectorField<T>& vel,
+                            TensorField<T>& sigma,
+                            const VectorField<T>& force,
+                            NodeInfo& node,
+                            BoundaryInfo<T, ND, NQ>& bdry,
+                            const bool StoreMacros=true);
 
     virtual void DoLocalTimestep(AbstractLattice<T, ND, NQ>& f,
-                            const MacroscopicVariable<T>& Fx,
-                            const MacroscopicVariable<T>& Fy,
-                            const MacroscopicVariable<T>& Fz,
+                            const VectorField<T>& force,
                             NodeInfo& node,
                             BoundaryInfo<T, ND, NQ>& bdry,
                             T& r_, T& u_, T& v_, T& w_, int i, int j, int k);
 
+    virtual void DoLocalTimestep(AbstractLattice<T, ND, NQ>& f,
+                            const VectorField<T>& force,
+                            NodeInfo& node,
+                            BoundaryInfo<T, ND, NQ>& bdry,
+                            T& r_, std::array<T, 3>& u_vec, std::array<T, 9>& s_mat, int i, int j, int k);
+
     virtual void DoLocalTimestepIncompressible(AbstractLattice<T, ND, NQ>& f,
-                        const MacroscopicVariable<T>& velx,
-                        const MacroscopicVariable<T>& vely,
-                        const MacroscopicVariable<T>& velz,
-                        const MacroscopicVariable<T>& Fx,
-                        const MacroscopicVariable<T>& Fy,
-                        const MacroscopicVariable<T>& Fz,
+                        const VectorField<T>& vel,
+                        const VectorField<T>& force,
                         const NodeInfo& node,
                         const BoundaryInfo<T, ND, NQ>& bdry, 
                         T& r_, int i, int j, int k);

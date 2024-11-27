@@ -3,7 +3,7 @@
 
 #include "boundary/AbstractBoundaryRule.h"
 #include "equilibria/Equilibria.h"
-#include "macroscopic/MacroscopicVariable.h"
+#include "macroscopic/AllFields.h"
 
 template <typename T, int ND, int NQ>
 class AbstractBdryRuleAntiBounceBack : public AbstractBoundaryRule<T, ND, NQ>

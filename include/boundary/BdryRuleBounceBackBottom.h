@@ -12,7 +12,7 @@ public:
     BdryRuleBounceBackBottom(AbstractLattice<T, ND, NQ>* pDistribution)
         : AbstractBdryRuleBounceBack<T, ND, NQ>(pDistribution) {}
 
-    BdryRuleBounceBackBottom(AbstractLattice<T, ND, NQ>* pDistribution, MacroscopicVariable<T>* pDensity, T velx, T vely, T velz)
+    BdryRuleBounceBackBottom(AbstractLattice<T, ND, NQ>* pDistribution, ScalarField<T>* pDensity, T velx, T vely, T velz)
         : AbstractBdryRuleBounceBack<T, ND, NQ>(pDistribution, pDensity, velx, vely, velz) {}
 
     ~BdryRuleBounceBackBottom() = default;

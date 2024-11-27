@@ -32,20 +32,22 @@ double ComputeTaylorGreenVelocityX(const int i, const int j [[maybe_unused]], co
 
 double ComputeTaylorGreenVelocityY(const int i, const int j [[maybe_unused]], const int k, const double t, const double td, const double u0, const double kx, const double ky);
 
-template <typename T>
-void SaveMacroscopic(int timstep, std::string& message, 
-             MacroscopicVariable<T>& dens, MacroscopicVariable<T>& velx,
-             MacroscopicVariable<T>& velz);
+double ComputeTaylorGreenSigmaXX(const int i, const int j [[maybe_unused]], const int k, const double t, const double td, const double rho0, const double u0, const double kx, const double ky, const double nu);
+
+double ComputeTaylorGreenSigmaXY(const int i, const int j [[maybe_unused]], const int k, const double t, const double td, const double rho0, const double u0, const double kx, const double ky, const double nu);
 
 template <typename T>
-void PrintAverages(std::string& message, MacroscopicVariable<T>& dens, MacroscopicVariable<T>& velx,
-                   MacroscopicVariable<T>& vely, MacroscopicVariable<T>& velz);
+void InitialiseMacroscopic(ScalarField<T>& dens, VectorField<T>& vel, VectorField<T>& force, TensorField<T>& sigma_lb, TensorField<T>& sigma_fd, double td, double p0, double rho0, double u0, double kx, double ky, double nu, int nx, int ny, int nz, bool ConstDensity=false);
+
+template <typename T>
+void SaveMacroscopic(int timestep, std::string& message, ScalarField<T>& dens, VectorField<T>& vel);
+
+template <typename T>
+void PrintAverages(std::string& message, ScalarField<T>& dens, VectorField<T>& vel);
 
 int main()
 {
     // Set parameters. All in lattice units.
-    using dfType = double; std::cout << "Double precision (F64)\n";
-    //using dfType = float; std::cout << "Single precision (F32)\n";
     const int nd = 2, nq = 9;
     const int nx = 72, ny = 1, nz = 96;
     const double nu = 0.1; //, tau = 0.8; // D2Q9 lattice, cs = 1/sqrt(3).
@@ -57,22 +59,24 @@ int main()
     const double td = 1.0 / (nu * (kx*kx + ky*ky));    // evaluates to 840 time steps.
     const double dt = 1.0; // dx = 1.0, 
 
-    std::string run_id = "SRTxx_WEI_F64";
+    std::string run_id = "SRTxx_MEI_F64";
     std::string savepath = "output";
 
     std::cout << "~~~~~~~~~~~~~~~~~\n";
     std::cout << run_id << "\n";
     std::cout << "~~~~~~~~~~~~~~~~~\n";
 
+    // Set precision for distribution functions.
+    using dfType = double; std::cout << "Double precision (F64)\n";
+    //using dfType = float; std::cout << "Single precision (F32)\n";
+
     // Declare arrays.
     LatticeSoAPull<dfType, nd, nq> f(nx, ny, nz, "f", run_id, savepath);
-    MacroscopicVariable<dfType> dens(nx, ny, nz, "r", run_id, savepath);
-    MacroscopicVariable<dfType> velx(nx, ny, nz, "u", run_id, savepath);
-    MacroscopicVariable<dfType> vely(nx, ny, nz, "w", run_id, savepath);
-    MacroscopicVariable<dfType> velz(nx, ny, nz, "v", run_id, savepath);
-    MacroscopicVariable<dfType> Fx(nx, ny, nz, "Fx", run_id, savepath);
-    MacroscopicVariable<dfType> Fy(nx, ny, nz, "Fx", run_id, savepath);
-    MacroscopicVariable<dfType> Fz(nx, ny, nz, "Fx", run_id, savepath);
+    ScalarField<dfType> dens(nx, ny, nz, "r", run_id, savepath);
+    VectorField<dfType> vel(nx, ny, nz, "u", run_id, savepath);
+    VectorField<dfType> force(nx, ny, nz, "F", run_id, savepath);
+    TensorField<dfType> sigma_lb(nx, ny, nz, "SL", run_id, savepath);
+    TensorField<dfType> sigma_fd(nx, ny, nz, "SF", run_id, savepath);
 
     /****************************************************************************************
      * 
@@ -91,86 +95,81 @@ int main()
     BoundaryInfo<dfType, nd, nq> bdry(0);
 
     // Initialise macroscopic variables.
-    auto compute_density = std::bind(ComputeTaylorGreenLBDensity, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, 0.0, td, p0, rho0, u0, kx, ky);
-    auto compute_velx = std::bind(ComputeTaylorGreenVelocityX, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, 0.0, td, u0, kx, ky);
-    auto compute_vely = std::bind(ComputeTaylorGreenVelocityY, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, 0.0, td, u0, kx, ky);
-
-    for (int k = 0; k < nz; ++k)
-    {
-        for (int j = 0; j < ny; ++j)
-        {
-            for (int i = 0; i < nx; ++i)
-            {
-                double rho = compute_density(i, j, k);
-                dens.SetValue(rho, i, j, k);
-
-                double u = compute_velx(i, j, k);
-                velx.SetValue(u, i, j, k);
-
-                double v = compute_vely(i, j, k);
-                velz.SetValue(v, i, j, k);
-            }
-        }
-    }
-    vely.SetToConstantValue(0.0);
-    Fx.SetToConstantValue(0.0);
-    Fy.SetToConstantValue(0.0);
-    Fz.SetToConstantValue(0.0);
+    const bool ConstantDensity = true;
+    InitialiseMacroscopic(dens, vel, force, sigma_lb, sigma_fd, td, p0, rho0, u0, kx, ky, nu, nx, ny, nz, ConstantDensity);
 
     /****************************************************************************************
      * 
      * Initialise the distribution functions.
      * 
      ***************************************************************************************/
-    //fluid_evolver.InitialiseEquilibrium(f, dens, velx, vely, velz, Fx, Fy, Fz, node, bdry); // FEQ
-    //fluid_evolver.Initialise(f, dens, velx, vely, velz, Fx, Fy, Fz, node, bdry);          // NEQ
-    fluid_evolver.InitialiseWei(f, dens, velx, vely, velz, Fx, Fy, Fz, node, bdry);       // WEI
+    //fluid_evolver.InitialiseEquilibrium(f, dens, vel, force, node, bdry); // FEQ
+    //fluid_evolver.Initialise(f, dens, vel, force, node, bdry);          // NEQ
+    fluid_evolver.InitialiseMei(f, dens, vel, force, node, bdry);       // Mei
 
     // Open file for writing.
     std::ofstream write_l2error(savepath+"/"+run_id+"_l2error.csv");
-    write_l2error << "time,r,u,v" << std::endl;
+    write_l2error << "time,r,u,v,sxx_lb,sxy_lb,sxx_fd,sxy_fd" << std::endl;
     write_l2error.precision(6);
     write_l2error.setf(std::ios::scientific);
     write_l2error.setf(std::ios::showpos);
 
     // Compute error at 0th timestep.
+    auto compute_density = std::bind(ComputeTaylorGreenLBDensity, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, 0.0, td, p0, rho0, u0, kx, ky);
+    auto compute_velx = std::bind(ComputeTaylorGreenVelocityX, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, 0.0, td, u0, kx, ky);
+    auto compute_vely = std::bind(ComputeTaylorGreenVelocityY, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, 0.0, td, u0, kx, ky);
+    auto compute_sxx = std::bind(ComputeTaylorGreenSigmaXX, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, 0.0, td, rho0, u0, kx, ky, nu);
+    auto compute_sxy = std::bind(ComputeTaylorGreenSigmaXY, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, 0.0, td, rho0, u0, kx, ky, nu);
     double l2error_r = ComputeL2ErrorScalar(dens, compute_density);
-    double l2error_u = ComputeL2ErrorScalar(velx, compute_velx);
-    double l2error_v = ComputeL2ErrorScalar(velz, compute_vely);
+    double l2error_u = ComputeL2ErrorVectorComponent(vel, 0, compute_velx);
+    double l2error_v = ComputeL2ErrorVectorComponent(vel, 2, compute_vely);
+    double l2error_sxx_lb = ComputeL2ErrorTensorComponent(sigma_lb, 0, 0, compute_sxx);
+    double l2error_sxy_lb = ComputeL2ErrorTensorComponent(sigma_lb, 0, 2, compute_sxy);
+    double l2error_sxx_fd = ComputeL2ErrorTensorComponent(sigma_fd, 0, 0, compute_sxx);
+    double l2error_sxy_fd = ComputeL2ErrorTensorComponent(sigma_fd, 0, 2, compute_sxy);
 
     // Save to file.
-    write_l2error << -0.5 << "," << l2error_r << "," << l2error_u << "," << l2error_v << std::endl;
+    write_l2error << -0.5 << "," << l2error_r << "," << l2error_u << "," << l2error_v << "," << l2error_sxx_lb << "," << l2error_sxy_lb << "," << l2error_sxx_fd << "," << l2error_sxy_fd << std::endl;
 
     // Print averages before.
     std::string message_before = "Before simulation:";
-    PrintAverages(message_before, dens, velx, vely, velz);
+    PrintAverages(message_before, dens, vel);
 
-    std::string msg = "Start";
-    SaveMacroscopic(0, msg, dens, velx, velz);
+    //std::string msg = "Start";
+    //SaveMacroscopic(0, msg, dens, velx, velz);
 
     for (double t = 0.0; t <= td; t+=dt)
     {
         // Run Lattice Boltzmann time step.
-        fluid_evolver.DoTimestep(f, dens, velx, vely, velz, Fx, Fy, Fz, node, bdry);
+        fluid_evolver.DoTimestep(f, dens, vel, sigma_lb, force, node, bdry);
+
+        // Compute stress from finite differences.
+        ComputeStressFiniteDifferencePeriodic(sigma_fd, vel, nu, rho0);
 
         if (t == 0.0)
         {
             // Print averages.
             std::string message = "t=0";
-            PrintAverages(message, dens, velx, vely, velz);
+            PrintAverages(message, dens, vel);
         }
 
         // Calculate L2 error norm for p, ux, uy.
         auto compute_density = std::bind(ComputeTaylorGreenLBDensity, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, t, td, p0, rho0, u0, kx, ky);
         auto compute_velx = std::bind(ComputeTaylorGreenVelocityX, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, t, td, u0, kx, ky);
         auto compute_vely = std::bind(ComputeTaylorGreenVelocityY, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, t, td, u0, kx, ky);
+        auto compute_sxx = std::bind(ComputeTaylorGreenSigmaXX, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, t, td, rho0, u0, kx, ky, nu);
+        auto compute_sxy = std::bind(ComputeTaylorGreenSigmaXY, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, t, td, rho0, u0, kx, ky, nu);
 
         l2error_r = ComputeL2ErrorScalar(dens, compute_density);
-        l2error_u = ComputeL2ErrorScalar(velx, compute_velx);
-        l2error_v = ComputeL2ErrorScalar(velz, compute_vely);
+        l2error_u = ComputeL2ErrorVectorComponent(vel, 0, compute_velx);
+        l2error_v = ComputeL2ErrorVectorComponent(vel, 2, compute_vely);
+        l2error_sxx_lb = ComputeL2ErrorTensorComponent(sigma_lb, 0, 0, compute_sxx);
+        l2error_sxy_lb = ComputeL2ErrorTensorComponent(sigma_lb, 0, 2, compute_sxy);
+        l2error_sxx_fd = ComputeL2ErrorTensorComponent(sigma_fd, 0, 0, compute_sxx);
+        l2error_sxy_fd = ComputeL2ErrorTensorComponent(sigma_fd, 0, 2, compute_sxy);
 
         // Save to file.
-        write_l2error << t << "," << l2error_r << "," << l2error_u << "," << l2error_v << std::endl;
+        write_l2error << t << "," << l2error_r << "," << l2error_u << "," << l2error_v << "," << l2error_sxx_lb << "," << l2error_sxy_lb << "," << l2error_sxx_fd << "," << l2error_sxy_fd << std::endl;
     }
 
     // Close files.
@@ -178,12 +177,15 @@ int main()
 
     // Print averages after.
     std::string message_after = "After simulation:";
-    PrintAverages(message_after, dens, velx, vely, velz);
+    PrintAverages(message_after, dens, vel);
 
-    msg = "End";
-    SaveMacroscopic(td, msg, dens, velx, velz);
+    //msg = "End";
+    //SaveMacroscopic(td, msg, dens, velx, velz);
 
-    std::cout << td << "," << l2error_r << "," << l2error_u << "," << l2error_v << std::endl;
+    std::cout << "---------------------------------------------------\n";
+    std::cout << "Final L2 error norms:\n";
+    std::cout << td << "," << l2error_r << "," << l2error_u << "," << l2error_v << "," << l2error_sxx_lb << "," << l2error_sxy_lb << "," << l2error_sxx_fd << "," << l2error_sxy_fd << "\n";
+    std::cout << "---------------------------------------------------\n";
 
     return 0;
 }
@@ -218,24 +220,94 @@ double ComputeTaylorGreenVelocityY(const int i, const int j [[maybe_unused]], co
     return u0 * sqrt(kx/ky) * sin(kx*x) * cos(ky*y) * exp(-t/td);
 }
 
+double ComputeTaylorGreenSigmaXX(const int i, const int j [[maybe_unused]], const int k, const double t, const double td, const double rho0, const double u0, const double kx, const double ky, const double nu)
+{
+    const double x = static_cast<double>(i);
+    const double y = static_cast<double>(k);
+
+    return 2.0 * rho0 * nu * u0 * std::sqrt(kx*ky) * std::sin(kx*x) * std::sin(ky*y) * std::exp(-t/td);
+}
+
+double ComputeTaylorGreenSigmaXY(const int i, const int j [[maybe_unused]], const int k, const double t, const double td, const double rho0, const double u0, const double kx, const double ky, const double nu)
+{
+    const double x = static_cast<double>(i);
+    const double y = static_cast<double>(k);
+
+    const double sqrts = std::sqrt(kx*kx*kx/ky) - std::sqrt(ky*ky*ky/kx);
+    const double coses = std::cos(kx*x) * std::cos(ky*y);
+    const double expon = std::exp(-t / td);
+    
+    return rho0 * nu * u0 * sqrts * coses * expon;
+}
+
 template <typename T>
-void SaveMacroscopic(int timestep, std::string& message, 
-             MacroscopicVariable<T>& dens, MacroscopicVariable<T>& velx,
-             MacroscopicVariable<T>& velz)
+void InitialiseMacroscopic(ScalarField<T>& dens, VectorField<T>& vel, VectorField<T>& force, TensorField<T>& sigma_lb, TensorField<T>& sigma_fd, double td, double p0, double rho0, double u0, double kx, double ky, double nu, int nx, int ny, int nz, bool ConstDensity)
+{
+    std::cout << "Initially constant density (1 = true, 0 = false): " << ConstDensity << "\n";
+
+    vel.SetToConstantValue(0.0, 1);
+    force.SetToConstantValue(0.0);
+    sigma_lb.SetToConstantValue(0.0);
+    sigma_fd.SetToConstantValue(0.0);
+
+    auto compute_density = std::bind(ComputeTaylorGreenLBDensity, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, 0.0, td, p0, rho0, u0, kx, ky);
+    auto compute_velx = std::bind(ComputeTaylorGreenVelocityX, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, 0.0, td, u0, kx, ky);
+    auto compute_vely = std::bind(ComputeTaylorGreenVelocityY, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, 0.0, td, u0, kx, ky);
+    auto compute_sxx = std::bind(ComputeTaylorGreenSigmaXX, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, 0.0, td, rho0, u0, kx, ky, nu);
+    auto compute_sxy = std::bind(ComputeTaylorGreenSigmaXY, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, 0.0, td, rho0, u0, kx, ky, nu);
+
+    for (int k = 0; k < nz; ++k)
+    {
+        for (int j = 0; j < ny; ++j)
+        {
+            for (int i = 0; i < nx; ++i)
+            {
+                if (ConstDensity)
+                {
+                    dens.SetValue(rho0, i, j, k);
+                }
+                else
+                {
+                    double rho = compute_density(i, j, k);
+                    dens.SetValue(rho, i, j, k);
+                }
+
+                double u = compute_velx(i, j, k);
+                vel.SetValue(u, 0, i, j, k);
+
+                double v = compute_vely(i, j, k);
+                vel.SetValue(v, 2, i, j, k);
+
+                double sxx = compute_sxx(i, j, k);
+                sigma_lb.SetValue(sxx, 0, 0, i, j, k);
+                sigma_lb.SetValue(-sxx, 2, 2, i, j, k); // sigma_yy = -sigma_xx
+                sigma_fd.SetValue(sxx, 0, 0, i, j, k);
+                sigma_fd.SetValue(-sxx, 2, 2, i, j, k); // sigma_yy = -sigma_xx
+
+                double sxy = compute_sxy(i, j, k);
+                sigma_lb.SetValue(sxy, 0, 2, i, j, k);
+                sigma_lb.SetValue(sxy, 2, 0, i, j, k); // sigma_yx = sigma_xy
+                sigma_fd.SetValue(sxy, 0, 2, i, j, k);
+                sigma_fd.SetValue(sxy, 2, 0, i, j, k); // because stress tensor is symmetric.
+            }
+        }
+    }
+}
+
+template <typename T>
+void SaveMacroscopic(int timestep, std::string& message, ScalarField<T>& dens, VectorField<T>& vel)
 {
     dens.WriteToTextFile(timestep);
-    velx.WriteToTextFile(timestep);
-    velz.WriteToTextFile(timestep);
+    vel.WriteToTextFile(timestep);
     std::cout << message << ". Timestep = " << timestep << "\n";
 }
 
 template <typename T>
-void PrintAverages(std::string& message, MacroscopicVariable<T>& dens, MacroscopicVariable<T>& velx,
-                   MacroscopicVariable<T>& vely, MacroscopicVariable<T>& velz)
+void PrintAverages(std::string& message, ScalarField<T>& dens, VectorField<T>& vel)
 {
     std::cout << message << "\n";
     std::cout << "Average density = " << dens.ComputeAverage() << "\n";
-    std::cout << "Average X velocity = " << velx.ComputeAverage() << "\n";
-    std::cout << "Average Y velocity = " << vely.ComputeAverage() << "\n";
-    std::cout << "Average Z velocity = " << velz.ComputeAverage() << "\n";
+    std::cout << "Average X velocity = " << vel.ComputeAverage(0) << "\n";
+    std::cout << "Average Y velocity = " << vel.ComputeAverage(1) << "\n";
+    std::cout << "Average Z velocity = " << vel.ComputeAverage(2) << "\n";
 }

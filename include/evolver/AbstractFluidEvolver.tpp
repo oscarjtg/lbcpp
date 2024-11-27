@@ -13,7 +13,7 @@ void AbstractFluidEvolver<T, ND, NQ>::SetKinematicViscosity(AbstractLattice<T, N
     std::cout << "Fluid evolver tau = " << tau << ", omega = " << mOmega << "\n";
 }
 
-inline double mat_idx(int a, int b) { return 3*a + b; }
+inline int mat_idx(int a, int b) { return 3*a + b; }
 
 /**
  * @brief f^eq + f^neq initialisation. 
@@ -25,13 +25,9 @@ inline double mat_idx(int a, int b) { return 3*a + b; }
  */
 template <typename T, int ND, int NQ>
 void AbstractFluidEvolver<T, ND, NQ>::Initialise(AbstractLattice<T, ND, NQ>& f,
-                                    const MacroscopicVariable<T>& dens,
-                                    const MacroscopicVariable<T>& velx,
-                                    const MacroscopicVariable<T>& vely,
-                                    const MacroscopicVariable<T>& velz,
-                                    const MacroscopicVariable<T>& Fx,
-                                    const MacroscopicVariable<T>& Fy,
-                                    const MacroscopicVariable<T>& Fz,
+                                    const ScalarField<T>& dens,
+                                    const VectorField<T>& vel,
+                                    const VectorField<T>& force,
                                     const NodeInfo& node,
                                     const BoundaryInfo<T, ND, NQ>& bdry [[maybe_unused]])
 {   
@@ -41,9 +37,9 @@ void AbstractFluidEvolver<T, ND, NQ>::Initialise(AbstractLattice<T, ND, NQ>& f,
     std::array<double, 9> uFFu;
     std::array<double, 3> vec_u;
     std::array<double, 3> vec_F;
-    std::array<int, 3> DX = {1, 0, 0};
-    std::array<int, 3> DY = {0, 1, 0};
-    std::array<int, 3> DZ = {0, 0, 1};
+    static constexpr std::array<int, 3> DX = {1, 0, 0};
+    static constexpr std::array<int, 3> DY = {0, 1, 0};
+    static constexpr std::array<int, 3> DZ = {0, 0, 1};
     for (int k = 0; k < node.GetNZ(); ++k)
     {
         for (int j = 0; j < node.GetNY(); ++j)
@@ -53,31 +49,29 @@ void AbstractFluidEvolver<T, ND, NQ>::Initialise(AbstractLattice<T, ND, NQ>& f,
                 if (!node.IsSolid(i, j, k) && !node.IsGas(i, j, k))
                 {
                     // Grab values from arrays.
-                    double r_ = dens.GetValue(i, j, k);
-                    double u_ = velx.GetValue(i, j, k);
-                    double v_ = vely.GetValue(i, j, k);
-                    double w_ = velz.GetValue(i, j, k);
-                    double Fx_ = Fx.GetValue(i, j, k);
-                    double Fy_ = Fy.GetValue(i, j, k);
-                    double Fz_ = Fz.GetValue(i, j, k);
+                    double r_  = dens.GetValue(i, j, k);
+                    double u_  = vel.GetValue(0, i, j, k);
+                    double v_  = vel.GetValue(1, i, j, k);
+                    double w_  = vel.GetValue(2, i, j, k);
+                    double Fx_ = force.GetValue(0, i, j, k);
+                    double Fy_ = force.GetValue(1, i, j, k);
+                    double Fz_ = force.GetValue(2, i, j, k);
 
                     // Values for equilibrium are different because of force term!
                     double u_eq = u_ - 0.5 * Fx_ / r_;
                     double v_eq = v_ - 0.5 * Fy_ / r_;
                     double w_eq = w_ - 0.5 * Fz_ / r_;
-                    double usq = (u_eq*u_eq + v_eq*v_eq + w_eq*w_eq) * f.CSI();
+                    double usq  = (u_eq*u_eq + v_eq*v_eq + w_eq*w_eq) * f.CSI();
 
                     // Finite differences.
                     if (node.IsFluid(i, j, k))
                     {
                         for (int a = 0; a < 3; ++a)
                         {
-                            // Centred difference for velx.
-                            DU[mat_idx(a, 0)] = ComputeCentredDiff(velx, i, j, k, DX[a], DY[a], DZ[a]);
-                            // Centred difference for vely.
-                            DU[mat_idx(a, 1)] = ComputeCentredDiff(vely, i, j, k, DX[a], DY[a], DZ[a]);
-                            // Centred difference for velz.
-                            DU[mat_idx(a, 2)] = ComputeCentredDiff(velz, i, j, k, DX[a], DY[a], DZ[a]);
+                            for (int b = 0; b < 3; ++b)
+                            {   // Centred difference for vel. b=0: x. b=1: y. b=2: z.
+                                DU[mat_idx(a, b)] = ComputeCentredDiff(vel, b, i, j, k, DX[a], DY[a], DZ[a]);
+                            }
                         }
                     }
                     else
@@ -88,30 +82,24 @@ void AbstractFluidEvolver<T, ND, NQ>::Initialise(AbstractLattice<T, ND, NQ>& f,
                             bool is_fluid_backward = node.IsFluid_NoWrapAllowed(i-DX[a], j-DY[a], k-DZ[a]);
                             if (is_fluid_forward && is_fluid_backward)
                             {
-                                // Centred difference for velx.
-                                DU[mat_idx(a, 0)] = ComputeCentredDiff(velx, i, j, k, DX[a], DY[a], DZ[a]);
-                                // Centred difference for vely.
-                                DU[mat_idx(a, 1)] = ComputeCentredDiff(vely, i, j, k, DX[a], DY[a], DZ[a]);
-                                // Centred difference for velz.
-                                DU[mat_idx(a, 2)] = ComputeCentredDiff(velz, i, j, k, DX[a], DY[a], DZ[a]);
+                                for (int b = 0; b < 3; ++b)
+                                {   // Centred difference.
+                                    DU[mat_idx(a, b)] = ComputeCentredDiff(vel, b, i, j, k, DX[a], DY[a], DZ[a]);
+                                }
                             }
                             else if (is_fluid_forward && !is_fluid_backward)
                             {
-                                // Forward difference for velx.
-                                DU[mat_idx(a, 0)] = ComputeForwardDiff(velx, i, j, k, DX[a], DY[a], DZ[a]);
-                                // Forward difference for vely.
-                                DU[mat_idx(a, 1)] = ComputeForwardDiff(vely, i, j, k, DX[a], DY[a], DZ[a]);
-                                // Forward difference for velz.
-                                DU[mat_idx(a, 2)] = ComputeForwardDiff(velz, i, j, k, DX[a], DY[a], DZ[a]);
+                                for (int b = 0; b < 3; ++b)
+                                {// Forward difference.
+                                    DU[mat_idx(a, 0)] = ComputeForwardDiff(vel, b, i, j, k, DX[a], DY[a], DZ[a]);
+                                }
                             }
                             else if (!is_fluid_forward && is_fluid_backward)
                             {
-                                // Backward difference for velx.
-                                DU[mat_idx(a, 0)] = ComputeBackwardDiff(velx, i, j, k, DX[a], DY[a], DZ[a]);
-                                // Backward difference for vely.
-                                DU[mat_idx(a, 1)] = ComputeBackwardDiff(vely, i, j, k, DX[a], DY[a], DZ[a]);
-                                // Backward difference for velz.
-                                DU[mat_idx(a, 2)] = ComputeBackwardDiff(velz, i, j, k, DX[a], DY[a], DZ[a]);
+                                for (int b = 0; b < 3; ++b)
+                                {// Backward difference.
+                                    DU[mat_idx(a, b)] = ComputeBackwardDiff(vel, b, i, j, k, DX[a], DY[a], DZ[a]);
+                                }
                             }
                             else
                             {
@@ -207,13 +195,9 @@ void AbstractFluidEvolver<T, ND, NQ>::Initialise(AbstractLattice<T, ND, NQ>& f,
  */
 template <typename T, int ND, int NQ>
 void AbstractFluidEvolver<T, ND, NQ>::InitialiseEquilibrium(AbstractLattice<T, ND, NQ>& f,
-                                    const MacroscopicVariable<T>& dens,
-                                    const MacroscopicVariable<T>& velx,
-                                    const MacroscopicVariable<T>& vely,
-                                    const MacroscopicVariable<T>& velz,
-                                    const MacroscopicVariable<T>& Fx,
-                                    const MacroscopicVariable<T>& Fy,
-                                    const MacroscopicVariable<T>& Fz,
+                                    const ScalarField<T>& dens,
+                                    const VectorField<T>& vel,
+                                    const VectorField<T>& force,
                                     const NodeInfo& node,
                                     const BoundaryInfo<T, ND, NQ>& bdry [[maybe_unused]])
 {
@@ -227,19 +211,19 @@ void AbstractFluidEvolver<T, ND, NQ>::InitialiseEquilibrium(AbstractLattice<T, N
                 if (!node.IsSolid(i, j, k) && !node.IsGas(i, j, k))
                 {
                     // Grab values from arrays.
-                    T r_ = dens.GetValue(i, j, k);
-                    T u_ = velx.GetValue(i, j, k);
-                    T v_ = vely.GetValue(i, j, k);
-                    T w_ = velz.GetValue(i, j, k);
-                    T Fx_ = Fx.GetValue(i, j, k);
-                    T Fy_ = Fy.GetValue(i, j, k);
-                    T Fz_ = Fz.GetValue(i, j, k);
+                    T r_  = dens.GetValue(i, j, k);
+                    T u_  = vel.GetValue(0, i, j, k);
+                    T v_  = vel.GetValue(1, i, j, k);
+                    T w_  = vel.GetValue(2, i, j, k);
+                    T Fx_ = force.GetValue(0, i, j, k);
+                    T Fy_ = force.GetValue(1, i, j, k);
+                    T Fz_ = force.GetValue(2, i, j, k);
 
                     // Values for equilibrium are different because of force term!
                     T u_eq = u_ - 0.5 * Fx_ / r_;
                     T v_eq = v_ - 0.5 * Fy_ / r_;
                     T w_eq = w_ - 0.5 * Fz_ / r_;
-                    T usq = (u_eq*u_eq + v_eq*v_eq + w_eq*w_eq) * f.CSI();
+                    T usq  = (u_eq*u_eq + v_eq*v_eq + w_eq*w_eq) * f.CSI();
 
                     // Calculate and set second order equilibrium distribution.
                     for (int q = 0; q < NQ; ++q)
@@ -265,29 +249,25 @@ void AbstractFluidEvolver<T, ND, NQ>::InitialiseEquilibrium(AbstractLattice<T, N
 }
 
 /**
- * @brief Wei's consistent initialisation scheme.
+ * @brief Mei's consistent initialisation scheme.
  * Carries out lattice boltzmann timesteps with fixed velocity field
  * until the density (aka pressure) field converges. 
  * Note that initialised distributions correspond to pre-collision populations.
  */
 template <typename T, int ND, int NQ>
-void AbstractFluidEvolver<T, ND, NQ>::InitialiseWei(AbstractLattice<T, ND, NQ>& f,
-                                    MacroscopicVariable<T>& dens,
-                                    const MacroscopicVariable<T>& velx,
-                                    const MacroscopicVariable<T>& vely,
-                                    const MacroscopicVariable<T>& velz,
-                                    const MacroscopicVariable<T>& Fx,
-                                    const MacroscopicVariable<T>& Fy,
-                                    const MacroscopicVariable<T>& Fz,
+void AbstractFluidEvolver<T, ND, NQ>::InitialiseMei(AbstractLattice<T, ND, NQ>& f,
+                                    ScalarField<T>& dens,
+                                    const VectorField<T>& vel,
+                                    const VectorField<T>& force,
                                     const NodeInfo& node,
                                     const BoundaryInfo<T, ND, NQ>& bdry [[maybe_unused]])
 {
-    std::cout << "Wei's consistent initialisation scheme (WEI)\n";
+    std::cout << "Mei's consistent initialisation scheme (Mei)\n";
     
     // Start from equilibrium initialisation.
-    InitialiseEquilibrium(f, dens, velx, vely, velz, Fx, Fy, Fz, node, bdry);
+    InitialiseEquilibrium(f, dens, vel, force, node, bdry);
 
-    // Now employ Wei's iterative scheme until L2 error norm goes below tolerance.
+    // Now employ Mei's iterative scheme until L2 error norm goes below tolerance.
     double tolerance;
     if (std::is_same<T, float>::value)
     {
@@ -317,30 +297,27 @@ void AbstractFluidEvolver<T, ND, NQ>::InitialiseWei(AbstractLattice<T, ND, NQ>& 
                     T r_ = 0;
 
                     // Do timestep at this node (does not modify MacroscopicVariable arrays).
-                    DoLocalTimestepIncompressible(f, velx, vely, velz, Fx, Fy, Fz, node, bdry, r_, i, j, k);
+                    DoLocalTimestepIncompressible(f, vel, force, node, bdry, r_, i, j, k);
 
-                    // Save only the density. Velocities remain unchanged during Wei's initialisation.
+                    // Save only the density. Velocities remain unchanged during Mei's initialisation.
                     dens.SetValue(r_, i, j, k);
                 }
             }
         }
         count++;
     }
-    std::cout << "Completed Wei's initialization after " << count << " iterations.\n";
+    std::cout << "Completed Mei's initialization after " << count << " iterations.\n";
     f.StreamDistributions();
 }
 
 template <typename T, int ND, int NQ>
 void AbstractFluidEvolver<T, ND, NQ>::DoTimestep(AbstractLattice<T, ND, NQ>& f,
-                                    MacroscopicVariable<T>& dens,
-                                    MacroscopicVariable<T>& velx,
-                                    MacroscopicVariable<T>& vely,
-                                    MacroscopicVariable<T>& velz,
-                                    const MacroscopicVariable<T>& Fx,
-                                    const MacroscopicVariable<T>& Fy,
-                                    const MacroscopicVariable<T>& Fz,
+                                    ScalarField<T>& dens,
+                                    VectorField<T>& vel,
+                                    const VectorField<T>& force,
                                     NodeInfo& node,
-                                    BoundaryInfo<T, ND, NQ>& bdry)
+                                    BoundaryInfo<T, ND, NQ>& bdry,
+                                    const bool StoreMacros)
 {
     // Stream.
     f.StreamDistributions();
@@ -356,13 +333,63 @@ void AbstractFluidEvolver<T, ND, NQ>::DoTimestep(AbstractLattice<T, ND, NQ>& f,
                 T r_ = 0, u_ = 0, v_ = 0, w_ = 0;
 
                 // Do timestep at this node (does not modify MacroscopicVariable arrays).
-                DoLocalTimestep(f, Fx, Fy, Fz, node, bdry, r_, u_, v_, w_, i, j, k);
+                DoLocalTimestep(f, force, node, bdry, r_, u_, v_, w_, i, j, k);
 
-                // Save local macroscopic variables to array.
-                dens.SetValue(r_, i, j, k);
-                velx.SetValue(u_, i, j, k);
-                vely.SetValue(v_, i, j, k);
-                velz.SetValue(w_, i, j, k);
+                if (StoreMacros)
+                {   // Save local macroscopic variables to arrays.
+                    dens.SetValue(r_, i, j, k);
+                    vel.SetValue(u_, 0, i, j, k);
+                    vel.SetValue(v_, 1, i, j, k);
+                    vel.SetValue(w_, 2, i, j, k);
+                }
+            }
+        }
+    }
+}
+
+template <typename T, int ND, int NQ>
+void AbstractFluidEvolver<T, ND, NQ>::DoTimestep(AbstractLattice<T, ND, NQ>& f,
+                                    ScalarField<T>& dens,
+                                    VectorField<T>& vel,
+                                    TensorField<T>& sigma,
+                                    const VectorField<T>& force,
+                                    NodeInfo& node,
+                                    BoundaryInfo<T, ND, NQ>& bdry,
+                                    const bool StoreMacros)
+{
+    // Stream.
+    f.StreamDistributions();
+
+    // Initialise variables and arrays of local density, velocity, and stress
+    T r_ = 0;
+    static std::array<T, 3> u_vec = {0.0, 0.0, 0.0};
+    static std::array<T, 9> s_mat = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+
+    // Collide.
+    for (int k = 0; k < node.GetNZ(); ++k)
+    {
+        for (int j = 0; j < node.GetNY(); ++j)
+        {
+            for (int i = 0; i < node.GetNX(); ++i)
+            {
+                // Do timestep at this node (does not modify MacroscopicVariable arrays).
+                DoLocalTimestep(f, force, node, bdry, r_, u_vec, s_mat, i, j, k);
+
+                if (StoreMacros)
+                {   // Save local macroscopic variables to arrays.
+                    dens.SetValue(r_, i, j, k);
+                    for (int a = 0; a < 3; ++a)
+                    {
+                        vel.SetValue(u_vec[a], a, i, j, k);
+                    }
+                    for (int b = 0; b < 3; ++b)
+                    {
+                        for (int a = 0; a < 3; ++a)
+                        {   // note mat_idx and TensorField index in opposite ways.
+                            sigma.SetValue(s_mat[mat_idx(a, b)], a, b, i, j, k); 
+                        }
+                    }
+                }
             }
         }
     }
@@ -370,14 +397,13 @@ void AbstractFluidEvolver<T, ND, NQ>::DoTimestep(AbstractLattice<T, ND, NQ>& f,
 
 template <typename T, int ND, int NQ>
 void AbstractFluidEvolver<T, ND, NQ>::DoLocalTimestep(AbstractLattice<T, ND, NQ>& f,
-                        const MacroscopicVariable<T>& Fx,
-                        const MacroscopicVariable<T>& Fy,
-                        const MacroscopicVariable<T>& Fz,
+                        const VectorField<T>& force,
                         NodeInfo& node,
                         BoundaryInfo<T, ND, NQ>& bdry, 
                         T& r_, T& u_, T& v_, T& w_, int i, int j, int k)
 {
     static std::array<T, NQ> flocal;
+    r_ = 0, u_ = 0, v_ = 0, w_ = 0;
 
     if (node.IsFluid(i, j, k))
     {
@@ -432,9 +458,9 @@ void AbstractFluidEvolver<T, ND, NQ>::DoLocalTimestep(AbstractLattice<T, ND, NQ>
     // Local collision step.
 
     // Grab local force.
-    T Fx_ = Fx.GetValue(i, j, k);
-    T Fy_ = Fy.GetValue(i, j, k);
-    T Fz_ = Fz.GetValue(i, j, k);
+    T Fx_ = force.GetValue(0, i, j, k);
+    T Fy_ = force.GetValue(1, i, j, k);
+    T Fz_ = force.GetValue(2, i, j, k);
 
     // Calculate local velocity (Guo's 2nd order scheme).
     u_ += 0.5 * Fx_;
@@ -449,13 +475,125 @@ void AbstractFluidEvolver<T, ND, NQ>::DoLocalTimestep(AbstractLattice<T, ND, NQ>
 }
 
 template <typename T, int ND, int NQ>
+void AbstractFluidEvolver<T, ND, NQ>::DoLocalTimestep(AbstractLattice<T, ND, NQ>& f,
+                        const VectorField<T>& force,
+                        NodeInfo& node,
+                        BoundaryInfo<T, ND, NQ>& bdry,
+                        T& r_, std::array<T, 3>& u_vec, std::array<T, 9>& s_mat, int i, int j, int k)
+{
+    static std::array<T, NQ> flocal;
+    static std::array<T, NQ> feq;
+    static std::array<T, 3> F_vec;
+    r_ = 0;
+    T u_ = 0, v_ = 0, w_ = 0; // Setting these to zero is important!!
+
+    if (node.IsFluid(i, j, k))
+    {
+        // Fluid streaming step.
+
+        // Grab local distribution function data
+        // and add to local concentration.
+        for (int q = 0; q < NQ; ++q)
+        {
+            T f_ = f.GetCurrF(q, i, j, k);
+            r_ += f_;
+            u_ += f_ * f.CX(q);
+            v_ += f_ * f.CY(q);
+            w_ += f_ * f.CZ(q);
+            flocal[q] = f_;
+        }
+    }
+    else if (node.IsBoundary(i, j, k))
+    {
+        // Boundary streaming step.
+        //std::cout << "Boundary node (" << i << ", " << j << ", " << k << "):\n";
+
+        // Work out which boundary condition rule you should be using.
+        int bdry_id = node.GetBoundaryID(i, j, k);
+
+        // Grab data according to boundary condition rule,
+        // and add to local concentration.
+        for (int q = 0; q < NQ; ++q)
+        {
+            T f_ = bdry.ComputeBdryRule(bdry_id, q, i, j, k);
+
+            //std::cout << "f[" << q << "] = " << f_ << "\n";
+
+            r_ += f_;
+            u_ += f_ * f.CX(q);
+            v_ += f_ * f.CY(q);
+            w_ += f_ * f.CZ(q);
+            flocal[q] = f_;
+        }
+    }
+    else if (node.IsInterface(i, j, k))
+    {
+        // Interface LB step.
+        // To be implemented.
+        return;
+    }
+    else
+    {
+        // do nothing if it's a solid or gas node.
+        return;
+    }
+    // Local collision step.
+
+    // Grab local force.
+    T Fx_ = force.GetValue(0, i, j, k);
+    T Fy_ = force.GetValue(1, i, j, k);
+    T Fz_ = force.GetValue(2, i, j, k);
+
+    // Calculate local velocity (Guo's 2nd order scheme).
+    u_ += 0.5 * Fx_;
+    u_ /= r_;
+    v_ += 0.5 * Fy_;
+    v_ /= r_;
+    w_ += 0.5 * Fz_;
+    w_ /= r_;
+
+    // Calculate velocity magnitude squared, scaled by lattice speed of sound.
+    T usq = (u_*u_ + v_*v_ + w_*w_) * f.CSI();
+
+    // Compute feq.
+    for (int q = 0; q < NQ; ++q)
+    {
+        // Compute c dot u, scaled by lattice speed of sound.
+        T cu = (u_ * f.CX(q) + v_ * f.CY(q) + w_ * f.CZ(q)) * f.CSI();
+
+        // Compute equilibrium distribution.
+        feq[q] = computeSecondOrderEquilibrium(r_, cu, usq, f.W(q));
+    }
+
+    // Fill vectors.
+    u_vec[0] = u_,  u_vec[1] = v_,  u_vec[2] = w_;
+    F_vec[0] = Fx_, F_vec[1] = Fy_, F_vec[2] = Fz_;
+
+    // Compute stress tensor. Must be computed using pre-collision distribution functions.
+    for (int b = 0; b < 3; ++b)
+    {
+        for (int a = 0; a < 3; ++a)
+        {
+            double sum = 0;
+            for (int q = 0; q < NQ; ++q)
+            {
+                T fneq = flocal[q] - feq[q];
+                sum += static_cast<double>(fneq * f.GetCqa(q, a) * f.GetCqa(q, b));
+            }
+            double first_term = -(1 - 0.5*mOmega) * sum;
+            double second_term = -0.5*(1 - 0.5*mOmega) * (F_vec[a]*u_vec[b] + u_vec[a]*F_vec[b]);
+            s_mat[mat_idx(a, b)] = first_term + second_term;
+        }
+    }
+
+    // Do collision.
+    DoLocalCollision(computeSecondOrderEquilibrium<T>, f, flocal, r_, u_vec[0], u_vec[1], u_vec[2], F_vec[0], F_vec[1], F_vec[2], i, j, k);
+}
+
+template <typename T, int ND, int NQ>
 void AbstractFluidEvolver<T, ND, NQ>::DoLocalTimestepIncompressible(AbstractLattice<T, ND, NQ>& f,
-                        const MacroscopicVariable<T>& velx,
-                        const MacroscopicVariable<T>& vely,
-                        const MacroscopicVariable<T>& velz,
-                        const MacroscopicVariable<T>& Fx,
-                        const MacroscopicVariable<T>& Fy,
-                        const MacroscopicVariable<T>& Fz,
+                        const VectorField<T>& vel,
+                        const VectorField<T>& force,
                         const NodeInfo& node,
                         const BoundaryInfo<T, ND, NQ>& bdry, 
                         T& r_, int i, int j, int k)
@@ -509,23 +647,21 @@ void AbstractFluidEvolver<T, ND, NQ>::DoLocalTimestepIncompressible(AbstractLatt
     // Local collision step.
 
     // Grab velocity.
-    T u_ = velx.GetValue(i, j, k);
-    T v_ = vely.GetValue(i, j, k);
-    T w_ = velz.GetValue(i, j, k);
+    T u_ = vel.GetValue(0, i, j, k);
+    T v_ = vel.GetValue(1, i, j, k);
+    T w_ = vel.GetValue(2, i, j, k);
 
     // Grab local force.
-    T Fx_ = Fx.GetValue(i, j, k);
-    T Fy_ = Fy.GetValue(i, j, k);
-    T Fz_ = Fz.GetValue(i, j, k);
+    T Fx_ = force.GetValue(0, i, j, k);
+    T Fy_ = force.GetValue(1, i, j, k);
+    T Fz_ = force.GetValue(2, i, j, k);
 
     // Calculate local velocity (Guo's 2nd order scheme).
-    u_ += 0.5 * Fx_;
-    u_ /= r_;
-    v_ += 0.5 * Fy_;
-    v_ /= r_;
-    w_ += 0.5 * Fz_;
-    w_ /= r_;
+    // Note we imposed the velocities, instead of computing from first moments of f, so this is not needed.
+    // u_ += 0.5 * Fx_ / r_;
+    // v_ += 0.5 * Fy_ / r_;
+    // w_ += 0.5 * Fz_ / r_;
 
     // Do collision, with incompressible equilibrium.
-    DoLocalCollision(computeSecondOrderEquilibrium<T>, f, flocal, r_, u_, v_, w_, Fx_, Fy_, Fz_, i, j, k);
+    DoLocalCollision(computeSecondOrderIncompressibleEquilibrium<T>, f, flocal, r_, u_, v_, w_, Fx_, Fy_, Fz_, i, j, k);
 }

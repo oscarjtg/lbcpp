@@ -4,7 +4,7 @@
 #include "equilibria/Equilibria.h"
 #include "force/ForceSource.h"
 
-#define DEBUG false
+//#define DEBUG false
 
 template <typename T, int ND, int NQ> 
 void FluidEvolverSRT<T, ND, NQ>::DoLocalCollision(std::function<T(T, T, T, T)> ComputeEquilibrium, AbstractLattice<T, ND, NQ>& f, std::array<T, NQ> flocal, T r_, T u_, T v_, T w_, T Fx_, T Fy_, T Fz_, int i, int j, int k)
@@ -15,10 +15,11 @@ void FluidEvolverSRT<T, ND, NQ>::DoLocalCollision(std::function<T(T, T, T, T)> C
     // Calculate u dot F, scaled by lattice speed of sound.
     T uF = (u_*Fx_ + v_*Fy_ + w_*Fz_) * f.CSI();
 
+    /*
     if (DEBUG) {
         std::cout << "Before collision: ";
         std::cout << "r = " << r_ << ", u = " << u_ << ", v = " << v_ << ", w = " << w_ << std::endl;
-    } std::array<T, NQ> feqlocal;
+    } std::array<T, NQ> feqlocal; */
 
     // Do SRT collision.
     for (int q = 0; q < NQ; ++q)
@@ -39,8 +40,10 @@ void FluidEvolverSRT<T, ND, NQ>::DoLocalCollision(std::function<T(T, T, T, T)> C
         // Save the post-collision value.
         f.SetCurrFStar(fstar, q, i, j, k);
 
-        if (DEBUG) { feqlocal[q] = feq; }
+        //if (DEBUG) { feqlocal[q] = feq; }
     }
+
+    /*
     if (DEBUG)
     {
         T r_after=0.0, u_after=0.0, v_after=0.0, w_after=0.0;
@@ -56,4 +59,5 @@ void FluidEvolverSRT<T, ND, NQ>::DoLocalCollision(std::function<T(T, T, T, T)> C
         std::cout << "r = " << r_after << ", u = " << u_after;
         std::cout << ", v = " << v_after << ", w = " << w_after << std::endl;
     }
+    */
 }

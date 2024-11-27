@@ -1,7 +1,7 @@
 #ifndef L2ERRORDEF
 #define L2ERRORDEF
 
-#include "macroscopic/MacroscopicVariable.h"
+#include "macroscopic/AllFields.h"
 #include "lattice/AbstractLattice.h"
 
 #include <cmath>
@@ -11,7 +11,7 @@
  * @brief Computes the L2 error norm for two scalar fields.
  */
 template <typename T>
-double ComputeL2ErrorScalar(MacroscopicVariable<T> &approx, MacroscopicVariable<T> &exact)
+double ComputeL2ErrorScalar(ScalarField<T> &approx, ScalarField<T> &exact)
 {
     assert(approx.GetNX() == exact.GetNX());
     assert(approx.GetNY() == exact.GetNY());
@@ -41,7 +41,7 @@ double ComputeL2ErrorScalar(MacroscopicVariable<T> &approx, MacroscopicVariable<
  * @brief Computes the L2 error norm for a scalar field from an analytic function.
  */
 template <typename T, typename Func>
-double ComputeL2ErrorScalar(MacroscopicVariable<T> &array, Func analytic_function)
+double ComputeL2ErrorScalar(ScalarField<T> &array, Func analytic_function)
 {
     double numerator = 0.0, denominator = 0.0;
     for (int k = 0; k < array.GetNZ(); ++k)
@@ -64,15 +64,70 @@ double ComputeL2ErrorScalar(MacroscopicVariable<T> &array, Func analytic_functio
 }
 
 /**
- * @brief Computes the L2 error norm for two vector fields (ax, ay, az) and (ex, ey, ez).
+ * @brief Computes the L2 error norm for a component (int a) of a VectorField, 
+ * compared to an analytic_function(i, j, k) for that component.
+ */
+template <typename T, typename Func>
+double ComputeL2ErrorVectorComponent(VectorField<T> &array, int a, Func analytic_function)
+{
+    double numerator = 0.0, denominator = 0.0;
+    for (int k = 0; k < array.GetNZ(); ++k)
+    {
+        for (int j = 0; j < array.GetNY(); ++j)
+        {
+            for (int i = 0; i < array.GetNX(); ++i)
+            {
+                double val_a = array.GetValue(a, i, j, k);
+                double val_e = analytic_function(i, j, k);
+                double difference = val_a - val_e;
+                numerator += difference * difference;
+                denominator += val_e * val_e;
+            }
+        }
+    }
+    assert(denominator != 0);
+    double l2_error = sqrt(numerator / denominator);
+    return l2_error;
+}
+
+/**
+ * @brief Computes the L2 error norm for a component (int a, int b) of a TensorField, 
+ * compared to an analytic_function(i, j, k) for that component.
+ */
+template <typename T, typename Func>
+double ComputeL2ErrorTensorComponent(TensorField<T> &array, int a, int b, Func analytic_function)
+{
+    double numerator = 0.0, denominator = 0.0;
+    for (int k = 0; k < array.GetNZ(); ++k)
+    {
+        for (int j = 0; j < array.GetNY(); ++j)
+        {
+            for (int i = 0; i < array.GetNX(); ++i)
+            {
+                double val_a = array.GetValue(a, b, i, j, k);
+                double val_e = analytic_function(i, j, k);
+                double difference = val_a - val_e;
+                numerator += difference * difference;
+                denominator += val_e * val_e;
+            }
+        }
+    }
+    assert(denominator != 0);
+    double l2_error = sqrt(numerator / denominator);
+    return l2_error;
+}
+
+/**
+ * @brief Computes the L2 error norm for two vector fields (ax, ay, az) and (ex, ey, ez),
+ * given as ScalarField instances.
  */
 template <typename T>
-double ComputeL2ErrorVector3(MacroscopicVariable<T> &ax,
-                             MacroscopicVariable<T> &ay,
-                             MacroscopicVariable<T> &az,
-                             MacroscopicVariable<T> &ex,
-                             MacroscopicVariable<T> &ey,
-                             MacroscopicVariable<T> &ez)
+double ComputeL2ErrorVector3(ScalarField<T> &ax,
+                             ScalarField<T> &ay,
+                             ScalarField<T> &az,
+                             ScalarField<T> &ex,
+                             ScalarField<T> &ey,
+                             ScalarField<T> &ez)
 {
     // Trust that the dimensions are the same.
     double numerator = 0.0, denominator = 0.0;
@@ -88,6 +143,40 @@ double ComputeL2ErrorVector3(MacroscopicVariable<T> &ax,
                 double val_ex = ex.GetValue(i, j, k);
                 double val_ey = ey.GetValue(i, j, k);
                 double val_ez = ez.GetValue(i, j, k);
+                double diff_x = val_ax - val_ex;
+                double diff_y = val_ay - val_ey;
+                double diff_z = val_az - val_ez;
+                numerator += diff_x * diff_x + diff_y * diff_y + diff_z * diff_z;
+                denominator += val_ex * val_ex + val_ey * val_ey + val_ez * val_ez;
+            }
+        }
+    }
+    assert(denominator != 0);
+    double l2_error = sqrt(numerator / denominator);
+    return l2_error;
+}
+
+/**
+ * @brief Computes the L2 error norm for two VectorFields (ax, ay, az) and (ex, ey, ez),
+ * 
+ */
+template <typename T>
+double ComputeL2ErrorVector3(VectorField<T>& approx, VectorField<T>& exact)
+{
+    // Trust that the dimensions are the same.
+    double numerator = 0.0, denominator = 0.0;
+    for (int k = 0; k < approx.GetNZ(); ++k)
+    {
+        for (int j = 0; j < approx.GetNY(); ++j)
+        {
+            for (int i = 0; i < approx.GetNX(); ++i)
+            {
+                double val_ax = approx.GetValue(0, i, j, k);
+                double val_ay = approx.GetValue(1, j, k);
+                double val_az = approx.GetValue(2, j, k);
+                double val_ex = exact.GetValue(0, i, j, k);
+                double val_ey = exact.GetValue(1, i, j, k);
+                double val_ez = exact.GetValue(2, i, j, k);
                 double diff_x = val_ax - val_ex;
                 double diff_y = val_ay - val_ey;
                 double diff_z = val_az - val_ez;

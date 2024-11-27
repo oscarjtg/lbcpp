@@ -24,9 +24,11 @@ The files are named as such:
     TRT12 : two relaxation time, with magic parameter 1/12
 
 {initialisation_scheme}:
-    FEQ : equilibrium initialisation scheme
-    NEQ : non-equilibrium initialisation scheme
-    WEI : Wei's consistent initialisation scheme
+    CEQ : equilibrium initialisation scheme, with constant initial density
+    FEQ : equilibrium initialisation scheme, with correct initial density
+    NEQ : non-equilibrium initialisation scheme (requires correct initial density)
+    MEI : Mei's consistent initialisation scheme, with constant initial density
+    WEI : Mei's consistent initialisation scheme, with correct initial density
 
 {dfType}:
     F64 : double precision

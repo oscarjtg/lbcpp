@@ -2,7 +2,7 @@
 #define ABSTRACTBOUNDARYRULEDEF
 
 #include "lattice/AbstractLattice.h"
-#include "macroscopic/MacroscopicVariable.h"
+#include "macroscopic/AllFields.h"
 
 template <typename T, int ND, int NQ>
 class AbstractBoundaryRule

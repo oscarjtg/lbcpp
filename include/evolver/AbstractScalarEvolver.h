@@ -2,7 +2,7 @@
 #define ABSTRACTSCALAREVOLVERDEF
 
 #include "lattice/AbstractLattice.h"
-#include "macroscopic/MacroscopicVariable.h"
+#include "macroscopic/AllFields.h"
 #include "domain/BoundaryInfo.h"
 #include "domain/NodeInfo.h"
 

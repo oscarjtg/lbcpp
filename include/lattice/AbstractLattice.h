@@ -134,13 +134,15 @@ public:
     inline int EZ(int q) const { return mLP.mEZ[q]; }
     inline T CX(int q) const { return static_cast<T>(mLP.mEX[q]); }
     inline T CY(int q) const { return static_cast<T>(mLP.mEY[q]); }
-    inline T CZ(int q) const { return static_cast<T>(mLP.mEZ[q]); }    
+    inline T CZ(int q) const { return static_cast<T>(mLP.mEZ[q]); }
     inline T W(int q) const { return mLP.mW[q]; }
     inline int QRev(int q) const { return mLP.mQRev[q]; }
     inline T CSI() const { return mLP.mCSI; }
     inline int GetNX() const { return mSizeX; }
     inline int GetNY() const { return mSizeY; }
     inline int GetNZ() const { return mSizeZ; }
+
+    T GetCqa(const int q, const int component_idx) const;
 
 protected:
     const int mSizeX, mSizeY, mSizeZ, mGridSize;

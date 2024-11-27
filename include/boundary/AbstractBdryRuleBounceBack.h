@@ -2,7 +2,7 @@
 #define ABSTRACTBDRYRULEBOUNCEBACKDEF
 
 #include "boundary/AbstractBoundaryRule.h"
-#include "macroscopic/MacroscopicVariable.h"
+#include "macroscopic/AllFields.h"
 
 template <typename T, int ND, int NQ>
 class AbstractBdryRuleBounceBack : public AbstractBoundaryRule<T, ND, NQ>
@@ -13,7 +13,7 @@ public:
     AbstractBdryRuleBounceBack(AbstractLattice<T, ND, NQ>* pDistribution)
         : AbstractBoundaryRule<T, ND, NQ>(pDistribution) {}
 
-    AbstractBdryRuleBounceBack(AbstractLattice<T, ND, NQ>* pDistribution, MacroscopicVariable<T>* pDensity, T velx, T vely, T velz)
+    AbstractBdryRuleBounceBack(AbstractLattice<T, ND, NQ>* pDistribution, ScalarField<T>* pDensity, T velx, T vely, T velz)
         : AbstractBoundaryRule<T, ND, NQ>(pDistribution), mpDensity(pDensity), mWallVelX(velx), mWallVelY(vely), mWallVelZ(velz) {}
 
     ~AbstractBdryRuleBounceBack() = default;
@@ -40,13 +40,13 @@ public:
         mWallVelZ = velz;
     }
 
-    void SetDensityPointer(MacroscopicVariable<T>* pDensity)
+    void SetDensityPointer(ScalarField<T>* pDensity)
     {
         mpDensity = pDensity;
     }
 
 protected:
-    MacroscopicVariable<T>* mpDensity;
+    ScalarField<T>* mpDensity;
 
     T mWallVelX, mWallVelY, mWallVelZ;
 

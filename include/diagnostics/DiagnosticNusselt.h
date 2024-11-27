@@ -3,7 +3,7 @@
 
 #include <iostream>
 
-#include "macroscopic/MacroscopicVariable.h"
+#include "macroscopic/AllFields.h"
 
 template <typename T>
 class DiagnosticNusselt
@@ -13,7 +13,7 @@ public:
 
     ~DiagnosticNusselt() = default;
 
-    double ComputeNusseltNumber(const MacroscopicVariable<T>& velz, const MacroscopicVariable<T>& temp)
+    double ComputeNusseltNumber(const VectorField<T>& vel, const ScalarField<T>& temp, int z_id=2)
     {
         // First compute average of velz * temp over whole domain.
         double wT = 0.0;
@@ -23,7 +23,7 @@ public:
             {
                 for (int i = 0; i < mNX; ++i)
                 {
-                    wT += static_cast<double>(velz.GetValue(i, j, k)) * static_cast<double>(temp.GetValue(i, j, k));
+                    wT += static_cast<double>(vel.GetValue(z_id, i, j, k)) * static_cast<double>(temp.GetValue(i, j, k));
                 }
             }
         }
