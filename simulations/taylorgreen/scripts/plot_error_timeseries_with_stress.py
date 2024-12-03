@@ -17,32 +17,38 @@ fig, axs = plt.subplots(2, 2, figsize=(6, 5))
 precisions      = ["F64", "F32"]
 operators       = ["SRTxx", "TRT04", "TRT12"]
 initialisations = ["CEQ", "FEQ", "NEQ", "MEI"]
-colours         = ["red", "black", "blue", "green"]
+colours         = ["firebrick", "black", "blue", "green"]
 
 directory = "output"
 file_end = "l2error.csv"
 
 for (init_num, init) in enumerate(initialisations):
     path64 = directory + "/" + operators[0] + "_" + init + "_" + precisions[0] + "_" + file_end
+    path32 = directory + "/" + operators[0] + "_" + init + "_" + precisions[1] + "_" + file_end
     df64 = pd.read_csv(path64)
-    print(path64)
+    df32 = pd.read_csv(path32)
 
     # Top left: velocity error.
     u_err64 = np.sqrt(df64["u"]*df64["u"] + df64["v"]*df64["v"])
+    u_err32 = np.sqrt(df32["u"]*df32["u"] + df32["v"]*df32["v"])
     axs[0][0].plot(df64["time"][2:], u_err64[2:], color=colours[init_num], label=init)
+    axs[0][0].plot(df32["time"][2:], u_err32[2:], color=colours[init_num], linestyle="dotted")
     axs[0][0].set_ylabel(r"$\epsilon (\mathbf{u})$")
 
     # Top right: pressure error.
-    axs[0][1].plot(df64["time"][2:], df64["r"][2:], color=colours[init_num])
+    axs[0][1].plot(df64["time"][2:], df64["p"][2:], color=colours[init_num])
+    axs[0][1].plot(df32["time"][2:], df32["p"][2:], color=colours[init_num], linestyle="dotted")
     axs[0][1].set_ylabel(r"$\epsilon (p)$")
 
     # Bottom left: sigma_xx
     axs[1][0].plot(df64["time"][2:], df64["sxx_lb"][2:], color=colours[init_num])
+    axs[1][0].plot(df32["time"][2:], df32["sxx_lb"][2:], color=colours[init_num], linestyle="dotted")
     axs[1][0].set_xlabel(r"$t$")
     axs[1][0].set_ylabel(r"$\epsilon (\sigma_{xx})$")
 
     # Bottom right: sigma_yy
     axs[1][1].plot(df64["time"][2:], df64["sxy_lb"][2:], color=colours[init_num])
+    axs[1][1].plot(df32["time"][2:], df32["sxy_lb"][2:], color=colours[init_num], linestyle="dotted")
     axs[1][1].set_xlabel(r"$t$")
     axs[1][1].set_ylabel(r"$\epsilon (\sigma_{xy})$")
 

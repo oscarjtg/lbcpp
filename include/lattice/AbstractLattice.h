@@ -128,6 +128,8 @@ public:
 
     virtual void WriteToTextFile(const int timestep = 0) const = 0;
 
+    void SetRunID(std::string run_id);
+
     // Getters.
     inline int EX(int q) const { return mLP.mEX[q]; }
     inline int EY(int q) const { return mLP.mEY[q]; }
@@ -147,7 +149,7 @@ public:
 protected:
     const int mSizeX, mSizeY, mSizeZ, mGridSize;
     
-    const std::string mIDString, mRunID, mSaveDirectory;
+    std::string mIDString, mRunID, mSaveDirectory;
     const int mProcessNumber;
     
     const LatticeParameters<T, ND, NQ> mLP;

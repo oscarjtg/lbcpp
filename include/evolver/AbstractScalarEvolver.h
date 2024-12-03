@@ -17,18 +17,14 @@ public:
     virtual void SetScalarDiffusivity(AbstractLattice<T, ND, NQ>& g, T kappa);
 
     virtual void Initialise(AbstractLattice<T, ND, NQ>& g,
-                            const MacroscopicVariable<T>& conc,
-                            const MacroscopicVariable<T>& velx,
-                            const MacroscopicVariable<T>& vely,
-                            const MacroscopicVariable<T>& velz,
+                            const ScalarField<T>& conc,
+                            const VectorField<T>& vel,
                             const NodeInfo& node,
                             const BoundaryInfo<T, ND, NQ>& bdry);
 
     virtual void DoTimestep(AbstractLattice<T, ND, NQ>& g,
-                            MacroscopicVariable<T>& conc,
-                            const MacroscopicVariable<T>& velx,
-                            const MacroscopicVariable<T>& vely,
-                            const MacroscopicVariable<T>& velz,
+                            ScalarField<T>& conc,
+                            const VectorField<T>& vel,
                             const NodeInfo& node,
                             const BoundaryInfo<T, ND, NQ>& bdry);
 

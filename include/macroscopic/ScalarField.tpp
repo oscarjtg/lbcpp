@@ -97,6 +97,12 @@ T ScalarField<T>::ComputeAverage() const
 }
 
 template <typename T>
+void ScalarField<T>::SetRunID(std::string run_id)
+{
+    mRunID = run_id;
+}
+
+template <typename T>
 void ScalarField<T>::DisplayInfo() const
 {   
     std::cout << "--------------------------------------------\n";

@@ -15,10 +15,8 @@ void AbstractScalarEvolver<T, ND, NQ>::SetScalarDiffusivity(AbstractLattice<T, N
 
 template <typename T, int ND, int NQ>
 void AbstractScalarEvolver<T, ND, NQ>::Initialise(AbstractLattice<T, ND, NQ>& g,
-                                    const MacroscopicVariable<T>& conc,
-                                    const MacroscopicVariable<T>& velx,
-                                    const MacroscopicVariable<T>& vely,
-                                    const MacroscopicVariable<T>& velz,
+                                    const ScalarField<T>& conc,
+                                    const VectorField<T>& vel,
                                     const NodeInfo& node,
                                     const BoundaryInfo<T, ND, NQ>& bdry [[maybe_unused]])
 {
@@ -31,9 +29,9 @@ void AbstractScalarEvolver<T, ND, NQ>::Initialise(AbstractLattice<T, ND, NQ>& g,
                 if (!node.IsSolid(i, j, k) && !node.IsGas(i, j, k))
                 {
                     T c_ = conc.GetValue(i, j, k);
-                    T u_ = velx.GetValue(i, j, k);
-                    T v_ = vely.GetValue(i, j, k);
-                    T w_ = velz.GetValue(i, j, k);
+                    T u_ = vel.GetValue(0, i, j, k);
+                    T v_ = vel.GetValue(1, i, j, k);
+                    T w_ = vel.GetValue(2, i, j, k);
                     T vel_squared = (u_*u_ + v_*v_ + w_*w_)*g.CSI();
                     for (int q = 0; q < NQ; ++q)
                     {
@@ -57,10 +55,8 @@ void AbstractScalarEvolver<T, ND, NQ>::Initialise(AbstractLattice<T, ND, NQ>& g,
 
 template <typename T, int ND, int NQ>
 void AbstractScalarEvolver<T, ND, NQ>::DoTimestep(AbstractLattice<T, ND, NQ>& g,
-                                    MacroscopicVariable<T>& conc,
-                                    const MacroscopicVariable<T>& velx,
-                                    const MacroscopicVariable<T>& vely,
-                                    const MacroscopicVariable<T>& velz,
+                                    ScalarField<T>& conc,
+                                    const VectorField<T>& vel,
                                     const NodeInfo& node,
                                     const BoundaryInfo<T, ND, NQ>& bdry)
 {
@@ -68,7 +64,7 @@ void AbstractScalarEvolver<T, ND, NQ>::DoTimestep(AbstractLattice<T, ND, NQ>& g,
     g.StreamDistributions();
 
     // Collide.
-    std::array<T, NQ> glocal;
+    static std::array<T, NQ> glocal;
 
     for (int k = 0; k < node.GetNZ(); ++k)
     {
@@ -79,7 +75,7 @@ void AbstractScalarEvolver<T, ND, NQ>::DoTimestep(AbstractLattice<T, ND, NQ>& g,
                 T c_ = 0; // Initialise local concentration.
                 if (node.IsFluid(i, j, k))
                 {
-                    // Fluid streaming step.
+                    // Scalar streaming step.
 
                     // Grab local distribution function data
                     // and add to local concentration.
@@ -123,9 +119,9 @@ void AbstractScalarEvolver<T, ND, NQ>::DoTimestep(AbstractLattice<T, ND, NQ>& g,
                 conc.SetValue(c_, i, j, k);
 
                 // Grab local velocity.
-                T u_ = velx.GetValue(i, j, k);
-                T v_ = vely.GetValue(i, j, k);
-                T w_ = velz.GetValue(i, j, k);
+                T u_ = vel.GetValue(0, i, j, k);
+                T v_ = vel.GetValue(1, i, j, k);
+                T w_ = vel.GetValue(2, i, j, k);
 
                 DoLocalCollision(g, glocal, c_, u_, v_, w_, i, j, k);
                 /*

@@ -178,6 +178,12 @@ void TensorField<T>::WriteToTextFile(const int timestep, int a, int b) const
 }
 
 template <typename T>
+void TensorField<T>::SetRunID(std::string run_id)
+{
+    mRunID = run_id;
+}
+
+template <typename T>
 void TensorField<T>::WriteToTextFile(const int timestep) const
 {
     for (int a = 0; a < mRows; ++a)

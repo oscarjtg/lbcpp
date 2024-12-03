@@ -38,6 +38,8 @@ public:
 
     void WriteToTextFile(const int timestep = 0) const;
 
+    void SetRunID(std::string run_id);
+
     inline int GetNX() const { return mSizeX; }
     inline int GetNY() const { return mSizeY; }
     inline int GetNZ() const { return mSizeZ; }
@@ -55,6 +57,7 @@ private:
     inline int idx(int a, int i, int j, int k) const
     {
         return a + mDims * (i + mSizeX * (j + mSizeY * k));
+        //return i + mSizeX * (j + mSizeY * (k + mSizeZ * a));
     }
 
     std::string construct_basepath(const int timestep, int a) const;

@@ -19,20 +19,28 @@ public:
     virtual void SetKinematicViscosity(AbstractLattice<T, ND, NQ>& f, T nu);
 
     virtual void Initialise(AbstractLattice<T, ND, NQ>& f,
+                            ScalarField<T>& dens,
+                            const VectorField<T>& vel,
+                            const VectorField<T>& force,
+                            const NodeInfo& node,
+                            const BoundaryInfo<T, ND, NQ>& bdry, 
+                            const std::string method="MEI");
+
+    virtual void InitialiseNEQ(AbstractLattice<T, ND, NQ>& f,
                             const ScalarField<T>& dens,
                             const VectorField<T>& vel,
                             const VectorField<T>& force,
                             const NodeInfo& node,
                             const BoundaryInfo<T, ND, NQ>& bdry);
 
-    virtual void InitialiseEquilibrium(AbstractLattice<T, ND, NQ>& f,
+    virtual void InitialiseFEQ(AbstractLattice<T, ND, NQ>& f,
                             const ScalarField<T>& dens,
                             const VectorField<T>& vel,
                             const VectorField<T>& force,
                             const NodeInfo& node,
                             const BoundaryInfo<T, ND, NQ>& bdry);
 
-    virtual void InitialiseMei(AbstractLattice<T, ND, NQ>& f,
+    virtual void InitialiseMEI(AbstractLattice<T, ND, NQ>& f,
                             ScalarField<T>& dens,
                             const VectorField<T>& vel,
                             const VectorField<T>& force,

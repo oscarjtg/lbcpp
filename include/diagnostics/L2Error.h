@@ -41,7 +41,7 @@ double ComputeL2ErrorScalar(ScalarField<T> &approx, ScalarField<T> &exact)
  * @brief Computes the L2 error norm for a scalar field from an analytic function.
  */
 template <typename T, typename Func>
-double ComputeL2ErrorScalar(ScalarField<T> &array, Func analytic_function)
+double ComputeL2ErrorScalar(ScalarField<T> &array, Func analytic_function, double subtract=0)
 {
     double numerator = 0.0, denominator = 0.0;
     for (int k = 0; k < array.GetNZ(); ++k)
@@ -50,8 +50,8 @@ double ComputeL2ErrorScalar(ScalarField<T> &array, Func analytic_function)
         {
             for (int i = 0; i < array.GetNX(); ++i)
             {
-                double val_a = array.GetValue(i, j, k);
-                double val_e = analytic_function(i, j, k);
+                double val_a = array.GetValue(i, j, k) - subtract;
+                double val_e = analytic_function(i, j, k) - subtract;
                 double difference = val_a - val_e;
                 numerator += difference * difference;
                 denominator += val_e * val_e;

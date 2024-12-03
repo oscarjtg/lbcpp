@@ -32,6 +32,8 @@ public:
 
     void WriteToTextFile(const int timestep = 0) const;
 
+    void SetRunID(std::string run_id);
+
     inline int GetNX() const { return mSizeX; }
     inline int GetNY() const { return mSizeY; }
     inline int GetNZ() const { return mSizeZ; }

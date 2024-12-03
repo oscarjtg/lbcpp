@@ -99,6 +99,12 @@ void AbstractLattice<T, ND, NQ>::DisplayLatticeParameters() const
     std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n";
 }
 
+template <typename T, int ND, int NQ>
+void AbstractLattice<T, ND, NQ>::SetRunID(std::string run_id)
+{
+    mRunID = run_id;
+}
+
 /**
  * @brief Construct the file name from path, runid, and timestep.
  * 

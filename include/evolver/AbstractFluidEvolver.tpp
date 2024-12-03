@@ -4,6 +4,7 @@
 #include "equilibria/Equilibria.h"
 
 #include <type_traits>
+#include <stdexcept>
 
 template <typename T, int ND, int NQ>
 void AbstractFluidEvolver<T, ND, NQ>::SetKinematicViscosity(AbstractLattice<T, ND, NQ>& f, T nu)
@@ -15,6 +16,38 @@ void AbstractFluidEvolver<T, ND, NQ>::SetKinematicViscosity(AbstractLattice<T, N
 
 inline int mat_idx(int a, int b) { return 3*a + b; }
 
+template <typename T, int ND, int NQ>
+void AbstractFluidEvolver<T, ND, NQ>::Initialise(AbstractLattice<T, ND, NQ>& f,
+                            ScalarField<T>& dens,
+                            const VectorField<T>& vel,
+                            const VectorField<T>& force,
+                            const NodeInfo& node,
+                            const BoundaryInfo<T, ND, NQ>& bdry, 
+                            const std::string method)
+{
+    if (method == "CEQ")
+    {
+        dens.SetToConstantValue(1.0);
+        InitialiseFEQ(f, dens, vel, force, node, bdry);
+    }
+    else if (method == "FEQ")
+    {
+        InitialiseFEQ(f, dens, vel, force, node, bdry);
+    }
+    else if (method == "NEQ")
+    {
+        InitialiseNEQ(f, dens, vel, force, node, bdry);
+    }
+    else if (method == "MEI")
+    {
+        InitialiseMEI(f, dens, vel, force, node, bdry);
+    }
+    else
+    {
+        throw std::invalid_argument("Argument must be CEQ, FEQ, NEQ, or MEI.");
+    }
+}
+
 /**
  * @brief f^eq + f^neq initialisation. 
  * Calculates velocity derivatives using centred finite differences on fluid nodes
@@ -24,7 +57,7 @@ inline int mat_idx(int a, int b) { return 3*a + b; }
  * For greater accuracy, compute everything in doubles.
  */
 template <typename T, int ND, int NQ>
-void AbstractFluidEvolver<T, ND, NQ>::Initialise(AbstractLattice<T, ND, NQ>& f,
+void AbstractFluidEvolver<T, ND, NQ>::InitialiseNEQ(AbstractLattice<T, ND, NQ>& f,
                                     const ScalarField<T>& dens,
                                     const VectorField<T>& vel,
                                     const VectorField<T>& force,
@@ -194,7 +227,7 @@ void AbstractFluidEvolver<T, ND, NQ>::Initialise(AbstractLattice<T, ND, NQ>& f,
  * Note that initialised distributions correspond to pre-collision populations.
  */
 template <typename T, int ND, int NQ>
-void AbstractFluidEvolver<T, ND, NQ>::InitialiseEquilibrium(AbstractLattice<T, ND, NQ>& f,
+void AbstractFluidEvolver<T, ND, NQ>::InitialiseFEQ(AbstractLattice<T, ND, NQ>& f,
                                     const ScalarField<T>& dens,
                                     const VectorField<T>& vel,
                                     const VectorField<T>& force,
@@ -255,7 +288,7 @@ void AbstractFluidEvolver<T, ND, NQ>::InitialiseEquilibrium(AbstractLattice<T, N
  * Note that initialised distributions correspond to pre-collision populations.
  */
 template <typename T, int ND, int NQ>
-void AbstractFluidEvolver<T, ND, NQ>::InitialiseMei(AbstractLattice<T, ND, NQ>& f,
+void AbstractFluidEvolver<T, ND, NQ>::InitialiseMEI(AbstractLattice<T, ND, NQ>& f,
                                     ScalarField<T>& dens,
                                     const VectorField<T>& vel,
                                     const VectorField<T>& force,
@@ -265,7 +298,7 @@ void AbstractFluidEvolver<T, ND, NQ>::InitialiseMei(AbstractLattice<T, ND, NQ>& 
     std::cout << "Mei's consistent initialisation scheme (Mei)\n";
     
     // Start from equilibrium initialisation.
-    InitialiseEquilibrium(f, dens, vel, force, node, bdry);
+    InitialiseFEQ(f, dens, vel, force, node, bdry);
 
     // Now employ Mei's iterative scheme until L2 error norm goes below tolerance.
     double tolerance;
