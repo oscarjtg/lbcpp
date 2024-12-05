@@ -326,7 +326,7 @@ void AbstractFluidEvolver<T, ND, NQ>::InitialiseMEI(AbstractLattice<T, ND, NQ>& 
             {
                 for (int i = 0; i < node.GetNX(); ++i)
                 {
-                    // Initialise local density and velocity.
+                    // Initialise local density (only density changes; velocity is fixed by initial condition).
                     T r_ = 0;
 
                     // Do timestep at this node (does not modify MacroscopicVariable arrays).

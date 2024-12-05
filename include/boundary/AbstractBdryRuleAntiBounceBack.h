@@ -47,21 +47,18 @@ public:
     }
 
 protected:
-    T mWallConc, mWallVelX, mWallVelY, mWallVelZ;
+    mutable T mWallConc, mWallVelX, mWallVelY, mWallVelZ;
 
     T compute_antibounceback(int q, int i, int j, int k) const
     {
-        // These lines are the same for all bounceback implementations.
+        // These lines are the same for all anti-bounceback implementations.
         int qrev = (this->mpDistribution)->QRev(q);
         T weight = (this->mpDistribution)->W(q);
-        T u_dot_c = mWallVelX * (this->mpDistribution)->CX(qrev) + mWallVelY * (this->mpDistribution)->CY(qrev) + mWallVelZ * (this->mpDistribution)->CZ(qrev);
-        T usq = mWallVelX*mWallVelX + mWallVelY*mWallVelY + mWallVelZ*mWallVelZ;
-        //std::cout << "compute_antibounceback(q, i, j, k): ";
-        //std::cout << "qrev = " << qrev;
-        //std::cout << ", mWallConc = " << mWallConc;
-        //std::cout << ", weight = " << weight;
-        //std::cout << ", u_dot_c = " << u_dot_c;
-        //std::cout << ", usq = " << usq << "\n";
+        // Dot product u_wall dot c_i, multiplied by cs^-2.
+        T u_dot_c = (mWallVelX * (this->mpDistribution)->CX(qrev) + mWallVelY * (this->mpDistribution)->CY(qrev) + mWallVelZ * (this->mpDistribution)->CZ(qrev)) * (this->mpDistribution)->CSI();
+        // uwall^2 * cs^-2
+        T usq = (mWallVelX*mWallVelX + mWallVelY*mWallVelY + mWallVelZ*mWallVelZ) * (this->mpDistribution)->CSI();
+        // Anti-bounce back formula.
         return -(this->mpDistribution)->GetPrevFStar(qrev, i, j, k) + static_cast<T>(2.0)*computeSecondOrderEquilibrium(mWallConc, u_dot_c, usq, weight);
     }
 };

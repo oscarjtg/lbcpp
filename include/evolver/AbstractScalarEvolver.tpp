@@ -101,6 +101,7 @@ void AbstractScalarEvolver<T, ND, NQ>::DoTimestep(AbstractLattice<T, ND, NQ>& g,
                         c_ += g_;
                         glocal[q] = g_;
                     }
+                    //std::cout << "conc[" << i << ", " << j << ", " << k << "] = " << c_ << "\n";
                 }
                 else if (node.IsInterface(i, j, k))
                 {

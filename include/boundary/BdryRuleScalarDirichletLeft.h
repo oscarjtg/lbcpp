@@ -1,18 +1,18 @@
-#ifndef BDRYRULESCALARDIRICHLETBOTTOMDEF
-#define BDRYRULESCALARDIRICHLETBOTTOMDEF
+#ifndef BDRYRULESCALARDIRICHLETLEFTDEF
+#define BDRYRULESCALARDIRICHLETLEFTDEF
 
 #include "boundary/AbstractBdryRuleAntiBounceBack.h"
 
 template <typename T, int ND, int NQ>
-class BdryRuleScalarDirichletBottom : public AbstractBdryRuleAntiBounceBack<T, ND, NQ>
+class BdryRuleScalarDirichletLeft : public AbstractBdryRuleAntiBounceBack<T, ND, NQ>
 {
 public:
-    BdryRuleScalarDirichletBottom() = default;
+    BdryRuleScalarDirichletLeft() = default;
 
-    BdryRuleScalarDirichletBottom(AbstractLattice<T, ND, NQ>* pDistribution, T wall_conc, T velx, T vely, T velz)
+    BdryRuleScalarDirichletLeft(AbstractLattice<T, ND, NQ>* pDistribution, T wall_conc, T velx, T vely, T velz)
         : AbstractBdryRuleAntiBounceBack<T, ND, NQ>(pDistribution, wall_conc, velx, vely, velz) {}
 
-    ~BdryRuleScalarDirichletBottom() = default;
+    ~BdryRuleScalarDirichletLeft() = default;
 
     T GetWallConc() const
     {
@@ -21,9 +21,9 @@ public:
 
     T GetDistributionValue(int q, int i, int j, int k) const override
     {
-        if ((this->mpDistribution)->EZ(q) > 0)
+        if ((this->mpDistribution)->EX(q) > 0)
         {
-            // Bounce back rule for DFs coming from wall below.
+            // Bounce back rule for DFs coming from left hand wall.
             T ans = this->compute_antibounceback(q, i, j, k);
             return ans;
         }
@@ -36,4 +36,4 @@ public:
     }
 };
 
-#endif // BDRYRULESCALARDIRICHLETBOTTOMDEF
+#endif // BDRYRULESCALARDIRICHLETLEFTDEF

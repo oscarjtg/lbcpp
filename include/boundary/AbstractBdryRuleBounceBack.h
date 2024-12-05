@@ -54,10 +54,11 @@ protected:
     {
         // These lines are the same for all bounceback implementations.
         int qrev = (this->mpDistribution)->QRev(q);
-        T u_dot_c = mWallVelX * (this->mpDistribution)->CX(qrev) + mWallVelY * (this->mpDistribution)->CY(qrev) + mWallVelZ * (this->mpDistribution)->CZ(qrev);
-        T delta = static_cast<T>(6.0) * (this->mpDistribution)->W(q) * mpDensity->GetValue(i, j, k) * u_dot_c;
+        // Dot product u_wall dot c_i, multiplied by cs^-2
+        T u_dot_c = (mWallVelX * (this->mpDistribution)->CX(qrev) + mWallVelY * (this->mpDistribution)->CY(qrev) + mWallVelZ * (this->mpDistribution)->CZ(qrev)) * (this->mpDistribution)->CSI();
+        // Change to bounce back as a result of momentum transfer to/from wall.
+        T delta = static_cast<T>(2.0) * (this->mpDistribution)->W(q) * mpDensity->GetValue(i, j, k) * u_dot_c;
         T fstar_prev = (this->mpDistribution)->GetPrevFStar(qrev, i, j, k);
-        //std::cout << "fstar_prev = " << fstar_prev << "\n";
         return fstar_prev - delta;
     }
 };
