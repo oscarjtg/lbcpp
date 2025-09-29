@@ -4,33 +4,31 @@
 #include <iostream> // for cout
 #include <string>
 
-#include "boundary/AllBoundaryRules.h"
-#include "convergence/ConvergenceTester.h"
-#include "diagnostics/DiagnosticNusselt.h"
-#include "domain/BoundaryInfo.h"
-#include "domain/NodeInfo.h"
-#include "evolver/AllEvolvers.h"
-#include "force/AllForces.h"
-#include "lattice/LatticeSoAPull.h"
-#include "macroscopic/MacroscopicVariable.h"
+#include "lbcpp.h"
+// #include "boundary/AllBoundaryRules.h"
+// #include "convergence/ConvergenceTester.h"
+// #include "diagnostics/DiagnosticNusselt.h"
+// #include "domain/BoundaryInfo.h"
+// #include "domain/NodeInfo.h"
+// #include "evolver/AllEvolvers.h"
+// #include "force/AllForces.h"
+// #include "lattice/LatticeSoAPull.h"
+// #include "macroscopic/MacroscopicVariable.h"
 
 void getInputParameters(double& rayleigh_number, double& prandtl_number, int& nx, int& ny, int& nz, int& nt, std::string& run_id, int argc, char* argv[]);
 
 void findGoodModelParameters(double& ag, double& tau_f, double& tau_g, const double Pr, const double Ra, const int ny, const double csi_f, const double csi_g);
 
 template <typename T>
-void printAverages(std::string& message, MacroscopicVariable<T>& dens, MacroscopicVariable<T>& velx,
-                   MacroscopicVariable<T>& vely, MacroscopicVariable<T>& velz, MacroscopicVariable<T>& temp);
+void printAverages(std::string& message, ScalarField<T>& dens, VectorField<T>& vel, ScalarField<T>& temp);
 
 template <typename T, int ND, int NQ_F, int NQ_G>
 void saveData(int timstep, std::string& message, AbstractLattice<T, ND, NQ_F>& f, AbstractLattice<T, ND, NQ_G>& g, 
-             MacroscopicVariable<T>& dens, MacroscopicVariable<T>& velx,
-             MacroscopicVariable<T>& vely, MacroscopicVariable<T>& velz, MacroscopicVariable<T>& temp);
+             ScalarField<T>& dens, VectorField<T>& vel, ScalarField<T>& temp);
                    
 template <typename T>
 void saveMacroscopic(int timstep, std::string& message, 
-             MacroscopicVariable<T>& dens, MacroscopicVariable<T>& velx,
-             MacroscopicVariable<T>& vely, MacroscopicVariable<T>& velz, MacroscopicVariable<T>& temp);
+             ScalarField<T>& dens, VectorField<T>& vel, ScalarField<T>& temp);
 /***************************************************
  *                                                 *
  *                     Main                        *
@@ -54,14 +52,10 @@ int main(int argc, char* argv[])
     LatticeSoAPull<dist_type, nd, nq_f> f(nx, ny, nz, "f", run_id, save_path);
     LatticeSoAPull<dist_type, nd, nq_g> g(nx, ny, nz, "g", run_id, save_path);
 
-    MacroscopicVariable<dist_type> dens(nx, ny, nz, "r", run_id, save_path);
-    MacroscopicVariable<dist_type> velx(nx, ny, nz, "u", run_id, save_path);
-    MacroscopicVariable<dist_type> vely(nx, ny, nz, "v", run_id, save_path);
-    MacroscopicVariable<dist_type> velz(nx, ny, nz, "w", run_id, save_path);
-    MacroscopicVariable<dist_type> temp(nx, ny, nz, "t", run_id, save_path);
-    MacroscopicVariable<dist_type> Fx(nx, ny, nz, "Fx", run_id, save_path);
-    MacroscopicVariable<dist_type> Fy(nx, ny, nz, "Fy", run_id, save_path);
-    MacroscopicVariable<dist_type> Fz(nx, ny, nz, "Fz", run_id, save_path);
+    ScalarField<dist_type> dens(nx, ny, nz, "r", run_id, save_path);
+    VectorField<dist_type> vel(nx, ny, nz, "u", run_id, save_path);
+    ScalarField<dist_type> temp(nx, ny, nz, "t", run_id, save_path);
+    VectorField<dist_type> force(nx, ny, nz, "force", run_id, save_path);
 
     double ag, tau_f, tau_g; // Model parameters.
     findGoodModelParameters(ag, tau_f, tau_g, Pr, Ra, nz, f.CSI(), g.CSI());
@@ -86,8 +80,7 @@ int main(int argc, char* argv[])
     f.DisplayLatticeParameters();
     g.DisplayLatticeParameters();
     dens.DisplayInfo();
-    velx.DisplayInfo();
-    vely.DisplayInfo();
+    vel.DisplayInfo();
     temp.DisplayInfo();
 
     // Set initial density to 1 everywhere.
@@ -114,7 +107,7 @@ int main(int argc, char* argv[])
     // Set force information.
     double ag_x = 0, ag_y = 0, ag_z = -std::fabs(ag), ref_temp = 0.5;
     LinearForceAnomalyTemp<dist_type> force_updater(ag_x, ag_y, ag_z, ref_temp, nx, ny, nz);
-    force_updater.UpdateForce(Fx, Fy, Fz, temp);
+    force_updater.UpdateForce(force, temp);
 
     // Initialise boundary information.
     int num_boundaries = 2;
@@ -148,18 +141,18 @@ int main(int argc, char* argv[])
     FluidEvolverSRT<dist_type, nd, nq_f> fluid_evolver;
     fluid_evolver.SetKinematicViscosity(f, kinematic_viscosity);
     // Note Fx, Fy, Fz must be initialised (i.e. updated) before the next line!
-    fluid_evolver.Initialise(f, dens, velx, vely, velz, Fx, Fy, Fz, node, bdry_info_f);
+    fluid_evolver.Initialise(f, dens, vel, force, node, bdry_info_f);
 
     ScalarEvolverSRT<dist_type, nd, nq_g> scalar_evolver;
     scalar_evolver.SetScalarDiffusivity(g, thermal_diffusivity);
-    scalar_evolver.Initialise(g, temp, velx, vely, velz, node, bdry_info_g);
+    scalar_evolver.Initialise(g, temp, vel, node, bdry_info_g);
 
     // Save initial data.
     std::string save_msg_before = "Initial data saved successfully.\n";
-    saveData(0, save_msg_before, f, g, dens, velx, vely, velz, temp);
+    saveData(0, save_msg_before, f, g, dens, vel, temp);
     
     std::string message_before = "Before simulation:";
-    printAverages(message_before, dens, velx, vely, velz, temp);
+    printAverages(message_before, dens, vel, temp);
 
     // Diagnostics.
     DiagnosticNusselt<dist_type> diagnoser(nx, ny, nz, thermal_diffusivity);
@@ -172,14 +165,14 @@ int main(int argc, char* argv[])
     {   
         // Perform one timestep of ADE LB algorithm for g using velocity u.
         // This updates g and temp.
-        scalar_evolver.DoTimestep(g, temp, velx, vely, velz, node, bdry_info_g);
+        scalar_evolver.DoTimestep(g, temp, vel, node, bdry_info_g);
 
         // Compute force density F from updated temp.
-        force_updater.UpdateForce(Fx, Fy, Fz, temp);
+        force_updater.UpdateForce(force, temp);
 
         // Perform one timestep of the standard LB algorithm for f using F.
         // This updates f, dens, velx, vely, and velz.
-        fluid_evolver.DoTimestep(f, dens, velx, vely, velz, Fx, Fy, Fz, node, bdry_info_f);
+        fluid_evolver.DoTimestep(f, dens, vel, force, node, bdry_info_f);
 
         // Compute diagnostic.
         const int nNusseltFrequency = 100;
@@ -188,10 +181,10 @@ int main(int argc, char* argv[])
             std::cout << "timestep: " << t << "\n";
             // Print averages after.
             std::string message_mid = "";
-            printAverages(message_mid, dens, velx, vely, velz, temp);
+            printAverages(message_mid, dens, vel, temp);
 
             // Compute nusselt number.
-            nusselt_number = diagnoser.ComputeNusseltNumber(velz, temp);
+            nusselt_number = diagnoser.ComputeNusseltNumber(vel, temp);
             // Store it.
             convergence_tester.AddValueToList(nusselt_number);
         }
@@ -204,7 +197,7 @@ int main(int argc, char* argv[])
         {
             // Save data to file.
             std::string save_msg_mid = "";
-            saveData(t, save_msg_mid, f, g, dens, velx, vely, velz, temp);
+            saveData(t, save_msg_mid, f, g, dens, vel, temp);
         }
         
         // End loop or not
@@ -217,11 +210,11 @@ int main(int argc, char* argv[])
 
     // Print averages after.
     std::string message_after = "After simulation:";
-    printAverages(message_after, dens, velx, vely, velz, temp);
+    printAverages(message_after, dens, vel, temp);
 
     // Save data after.
     std::string save_msg_after = "Final data saved successfully.\n";
-    saveData(nt, save_msg_after, f, g, dens, velx, vely, velz, temp);
+    saveData(nt, save_msg_after, f, g, dens, vel, temp);
 }
 
 
@@ -320,41 +313,34 @@ void findGoodModelParameters(double& alpha_g, double& tau_f, double& tau_g, cons
 }
 
 template <typename T>
-void printAverages(std::string& message, MacroscopicVariable<T>& dens, MacroscopicVariable<T>& velx,
-                   MacroscopicVariable<T>& vely, MacroscopicVariable<T>& velz, MacroscopicVariable<T>& temp)
+void printAverages(std::string& message, ScalarField<T>& dens, VectorField<T>& vel, ScalarField<T>& temp)
 {
     std::cout << message << "\n";
     std::cout << "Average density = " << dens.ComputeAverage() << "\n";
-    std::cout << "Average X velocity = " << velx.ComputeAverage() << "\n";
-    std::cout << "Average Y velocity = " << vely.ComputeAverage() << "\n";
-    std::cout << "Average Z velocity = " << velz.ComputeAverage() << "\n";
+    std::cout << "Average X velocity = " << vel.ComputeAverage(0) << "\n";
+    std::cout << "Average Y velocity = " << vel.ComputeAverage(1) << "\n";
+    std::cout << "Average Z velocity = " << vel.ComputeAverage(2) << "\n";
     std::cout << "Average temperature = " << temp.ComputeAverage() << "\n";
 }
 
 template <typename T, int ND, int NQ_F, int NQ_G>
 void saveData(int timestep, std::string& message, AbstractLattice<T, ND, NQ_F>& f, AbstractLattice<T, ND, NQ_G>& g, 
-             MacroscopicVariable<T>& dens, MacroscopicVariable<T>& velx,
-             MacroscopicVariable<T>& vely, MacroscopicVariable<T>& velz, MacroscopicVariable<T>& temp)
+             ScalarField<T>& dens, VectorField<T>& vel, ScalarField<T>& temp)
 {
     f.WriteToTextFile(timestep);
     g.WriteToTextFile(timestep);
     dens.WriteToTextFile(timestep);
-    velx.WriteToTextFile(timestep);
-    vely.WriteToTextFile(timestep);
-    velz.WriteToTextFile(timestep);
+    vel.WriteToTextFile(timestep);
     temp.WriteToTextFile(timestep);
     std::cout << message;
 }
 
 template <typename T>
 void saveMacroscopic(int timestep, std::string& message, 
-             MacroscopicVariable<T>& dens, MacroscopicVariable<T>& velx,
-             MacroscopicVariable<T>& vely, MacroscopicVariable<T>& velz, MacroscopicVariable<T>& temp)
+             ScalarField<T>& dens, VectorField<T>& vel, ScalarField<T>& temp)
 {
     dens.WriteToTextFile(timestep);
-    velx.WriteToTextFile(timestep);
-    vely.WriteToTextFile(timestep);
-    velz.WriteToTextFile(timestep);
+    vel.WriteToTextFile(timestep);
     temp.WriteToTextFile(timestep);
     std::cout << message << ". Timestep = " << timestep << "\n";
 }

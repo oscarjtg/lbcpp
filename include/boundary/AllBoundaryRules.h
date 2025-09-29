@@ -17,3 +17,4 @@
 // Scalar Neumann boundaries for straight walls.
 #include "boundary/BdryRuleScalarNeumannRight.h"
 #include "boundary/BdryRuleScalarNeumannTop.h"
+#include "boundary/BdryRuleScalarNeumannBottom.h"

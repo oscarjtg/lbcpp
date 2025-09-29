@@ -43,6 +43,28 @@ public:
         }
     }
 
+    // Expects ag_z < 0 for downwards gravity.
+    void UpdateForce(VectorField<T>& force,
+                     const ScalarField<T>& temperature)
+    {
+        T fx, fy, fz;
+        for (int k = 0; k < mNZ; ++k)
+        {
+            for (int j = 0; j < mNY; ++j)
+            {
+                for (int i = 0; i < mNX; ++i)
+                {
+                    fx = -mAlphaGravityX * (temperature.GetValue(i, j, k) - mReferenceTemperature);
+                    fy = -mAlphaGravityY * (temperature.GetValue(i, j, k) - mReferenceTemperature);
+                    fz = -mAlphaGravityZ * (temperature.GetValue(i, j, k) - mReferenceTemperature);
+                    force.SetValue(fx, 0, i, j, k);
+                    force.SetValue(fy, 1, i, j, k);
+                    force.SetValue(fz, 2, i, j, k);
+                }
+            }
+        }
+    }
+
 private:
     T mAlphaGravityX, mAlphaGravityY, mAlphaGravityZ, mReferenceTemperature;
 

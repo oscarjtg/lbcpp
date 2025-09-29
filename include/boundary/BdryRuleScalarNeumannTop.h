@@ -23,7 +23,7 @@ public:
     {
         // Get concentration one grid point in direction of normal pointing out of wall 
         // For top wall, the normal is (0, 0, -1)
-        this->mWallConc = mpConc->GetValue(i, j, k-1);
+        this->mWallConc = mpConc->GetValue(i, j, k);
 
         if ((this->mpDistribution)->EZ(q) < 0)
         {

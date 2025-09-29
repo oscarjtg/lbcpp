@@ -1,18 +1,5 @@
 /**
- * Decaying Taylor-Green vortex flow.
- * Tests fluid initialisation and bulk fluid dynamics in periodic domain (no solid boundaries)
- * nx, ny = 96, 72
- * tau = 0.8, nu = 0.1
- * u0 = 0.03
- * rho0 = 1
- * p0 = 0.
- * 
- * Initialise.
- * Evolve for one charaacteristic timescale
- * t_d = 1 / (nu * (kx^2 + ky^2))
- * where wavenumbers
- * kx = 2*pi / nx
- * ky = 2*pi / ny;
+ * Advection and diffusion of a Gaussian Hill in a uniform flow.
  */
 
 #include "lbcpp.h"
@@ -36,8 +23,8 @@ void SaveMacroscopic(int timestep, std::string& message, ScalarField<T>& conc);
 template <typename T>
 void PrintAverages(std::string& message, ScalarField<T>& conc);
 
-template <typename dfType, int nd, int nq>
-void RunLatticeBoltzmannModel(const int nx, const int ny, const int nz, const double C0, const double sigma0, const double x0, const double y0, const double u0, const double v0, const double D, const double dt, const double tf, std::string run_id, std::string savepath, AbstractScalarEvolver<dfType, nd, nq>& scalar_evolver, AbstractLattice<dfType, nd, nq>& g, ScalarField<dfType>& conc, VectorField<dfType>& vel, NodeInfo& node, BoundaryInfo<dfType, nd, nq>& bdry);
+template <typename T, int nd, int nq>
+void RunLatticeBoltzmannModel(const int nx, const int ny, const int nz, const double C0, const double sigma0, const double x0, const double y0, const double u0, const double v0, const double D, const double dt, const double tf, std::string run_id, std::string savepath, AbstractScalarEvolver<T, nd, nq>& scalar_evolver, AbstractLattice<T, nd, nq>& g, ScalarField<T>& conc, VectorField<T>& vel, NodeInfo& node, BoundaryInfo<T, nd, nq>& bdry);
 
 int main()
 {
@@ -148,8 +135,8 @@ void PrintAverages(std::string& message, ScalarField<T>& conc)
     std::cout << "Average concentration = " << conc.ComputeAverage() << "\n";
 }
 
-template <typename dfType, int nd, int nq>
-void RunLatticeBoltzmannModel(const int nx, const int ny, const int nz, const double C0, const double sigma0, const double x0, const double y0, const double u0, const double v0, const double D, const double dt, const double tf, std::string run_id, std::string savepath, AbstractScalarEvolver<dfType, nd, nq>& scalar_evolver, AbstractLattice<dfType, nd, nq>& g, ScalarField<dfType>& conc, VectorField<dfType>& vel, NodeInfo& node, BoundaryInfo<dfType, nd, nq>& bdry)
+template <typename T, int nd, int nq>
+void RunLatticeBoltzmannModel(const int nx, const int ny, const int nz, const double C0, const double sigma0, const double x0, const double y0, const double u0, const double v0, const double D, const double dt, const double tf, std::string run_id, std::string savepath, AbstractScalarEvolver<T, nd, nq>& scalar_evolver, AbstractLattice<T, nd, nq>& g, ScalarField<T>& conc, VectorField<T>& vel, NodeInfo& node, BoundaryInfo<T, nd, nq>& bdry)
 {
     std::cout << "~~~~~~~~~~~~~~~~~\n";
     std::cout << run_id << "\n";
@@ -158,7 +145,7 @@ void RunLatticeBoltzmannModel(const int nx, const int ny, const int nz, const do
     g.SetRunID(run_id);
     conc.SetRunID(run_id);
 
-    // Set kinematic viscosity.
+    // Set diffusivity.
     scalar_evolver.SetScalarDiffusivity(g, D);
 
     InitialiseMacroscopic(conc, vel, nx, ny, nz, C0, sigma0, x0, y0, u0, v0, D);
