@@ -46,7 +46,7 @@ A summary of the examples are below;
     ```
     Then run the executable using `mpirun` (or `mpiexec`),
     ```
-    mpirun -n 3 ./RayleighBenard2DMPI
+    mpirun -n 4 ./RayleighBenard2DMPI
     ```
     The `-n` flag specifies the number of processors. 
-    For the code as written, the number of processors must be a multiple of three.
+    For the code as written, the number of processors must be a multiple of four.
