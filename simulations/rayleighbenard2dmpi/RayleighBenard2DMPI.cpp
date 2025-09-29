@@ -22,6 +22,13 @@ void saveData(int timstep, std::string& message, AbstractLattice<T, ND, NQ_F>& f
 template <class T>
 void saveMacroscopic(int timstep, std::string& message, 
              ScalarField<T>& dens, VectorField<T>& vel, ScalarField<T>& temp);
+
+template <class T, int ND, int NQ_F, int NQ_G>
+void fillBuffers(AbstractLattice<T, ND, NQ_F>& f, AbstractLattice<T, ND, NQ_G>& g, float* buffers[], GridParameters& grid);
+
+template <class T, int ND, int NQ_F, int NQ_G>
+void unpackBuffers(AbstractLattice<T, ND, NQ_F>& f, AbstractLattice<T, ND, NQ_G>& g, float* buffers[], GridParameters& grid);
+
 /***************************************************
  *                                                 *
  *                     Main                        *
@@ -30,7 +37,7 @@ void saveMacroscopic(int timstep, std::string& message,
 
 int main(int argc, char* argv[])
 {
-    using dist_type = double; // type alias for distribution functions
+    using dist_type = float; // type alias for distribution functions
 
     MPI_Init(&argc, &argv);
 
@@ -47,8 +54,8 @@ int main(int argc, char* argv[])
     const int NX = 120;
     const int NY = 120;
     const int NT = 10;
-    const int NROWS = 4;
-    int NCOLUMNS = number_of_processes / NROWS;
+    const int NCOLUMNS = 4;
+    int NROWS = number_of_processes / NCOLUMNS;
 
     //assert(number_of_processes % NROWS == 0);
     //assert(NX % NCOLUMNS == 0);
@@ -116,14 +123,15 @@ int main(int argc, char* argv[])
     MPI_Barrier(MPI_COMM_WORLD);
 
     // Allocate send/receive buffers for MPI.
-    float* bsend_rigt = new float[4 * grid.ny]; // send to the process to the right of this one.
-    float* brecv_left = new float[4 * grid.ny]; // receive from the process to the left of this one.
-    float* bsend_left = new float[4 * grid.ny]; // etc...
-    float* brecv_rigt = new float[4 * grid.ny];
-    float* bsend_upup = new float[4 * grid.nx]; // note change from grid.ny to grid.nx.
-    float* brecv_down = new float[4 * grid.nx];
-    float* bsend_down = new float[4 * grid.nx];
-    float* brecv_upup = new float[4 * grid.nx];
+    const int nq = nq_f + nq_g;
+    float* bsend_rigt = new float[nq * grid.ny]; // send to the process to the right of this one.
+    float* brecv_left = new float[nq * grid.ny]; // receive from the process to the left of this one.
+    float* bsend_left = new float[nq * grid.ny]; // etc...
+    float* brecv_rigt = new float[nq * grid.ny];
+    float* bsend_upup = new float[nq * grid.nx]; // note change from grid.ny to grid.nx.
+    float* brecv_down = new float[nq * grid.nx];
+    float* bsend_down = new float[nq * grid.nx];
+    float* brecv_upup = new float[nq * grid.nx];
 
     // Define an array of pointers to the first elements of each array
     float* buffers[] = {
@@ -153,7 +161,6 @@ int main(int argc, char* argv[])
         double perturbation = eps * cos(x);
         temp.AddToValue(perturbation, i, 0, k_mid);
     }
-
 
     // Set force information.
     double ag_x = 0, ag_y = 0, ag_z = -std::fabs(ag), ref_temp = 0.5;
@@ -227,19 +234,6 @@ int main(int argc, char* argv[])
         // This updates f, dens, velx, vely, and velz.
         fluid_evolver.DoTimestep(f, dens, vel, force, node, bdry_info_f);
 
-        // Send/recv data.
-        int tag = 0;
-        MPI_Sendrecv(bsend_rigt, 4*grid.ny, MPI_FLOAT, rigt_proc_num, tag, brecv_left, 4*grid.ny, MPI_FLOAT, left_proc_num, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-
-        tag = 1;
-        MPI_Sendrecv(bsend_left, 4*grid.ny, MPI_FLOAT, left_proc_num, tag, brecv_rigt, 4*grid.ny, MPI_FLOAT, rigt_proc_num, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-
-        tag = 2;
-        MPI_Sendrecv(bsend_upup, 4*grid.nx, MPI_FLOAT, upup_proc_num, tag, brecv_down, 4*grid.nx, MPI_FLOAT, down_proc_num, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-
-        tag = 3;
-        MPI_Sendrecv(bsend_down, 4*grid.nx, MPI_FLOAT, down_proc_num, tag, brecv_upup, 4*grid.nx, MPI_FLOAT, upup_proc_num, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-
         // Compute diagnostic.
         const int nNusseltFrequency = 1000;
         if (t % nNusseltFrequency == 0)
@@ -272,6 +266,30 @@ int main(int argc, char* argv[])
             std::cout << "Simulation ended after " << t << " timesteps.\n";
             break;
         }
+
+        // MPI Communication!
+        // Fill buffers with data from the boundaries of f and g arrays.
+        fillBuffers(f, g, buffers, grid);
+        MPI_Barrier(MPI_COMM_WORLD);
+
+        // Send/receive data between buffers of different MPI processes.
+        int tag = 0;
+        MPI_Sendrecv(bsend_rigt, nq*grid.ny, MPI_FLOAT, rigt_proc_num, tag, brecv_left, nq*grid.ny, MPI_FLOAT, left_proc_num, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+        tag = 1;
+        MPI_Sendrecv(bsend_left, nq*grid.ny, MPI_FLOAT, left_proc_num, tag, brecv_rigt, nq*grid.ny, MPI_FLOAT, rigt_proc_num, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+        tag = 2;
+        MPI_Sendrecv(bsend_upup, nq*grid.nx, MPI_FLOAT, upup_proc_num, tag, brecv_down, nq*grid.nx, MPI_FLOAT, down_proc_num, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+        tag = 3;
+        MPI_Sendrecv(bsend_down, nq*grid.nx, MPI_FLOAT, down_proc_num, tag, brecv_upup, nq*grid.nx, MPI_FLOAT, upup_proc_num, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+        MPI_Barrier(MPI_COMM_WORLD);
+
+        // Fill edges of f and g arrays with data received by buffers.
+        unpackBuffers(f, g, buffers, grid);
+        MPI_Barrier(MPI_COMM_WORLD);
     }
 
     // Print averages after.
@@ -398,4 +416,143 @@ void saveMacroscopic(int timestep, std::string& message,
     vel.WriteToTextFile(timestep);
     temp.WriteToTextFile(timestep);
     std::cout << message << ". Timestep = " << timestep << "\n";
+}
+
+template <class T, int ND, int NQ_F, int NQ_G>
+void fillBuffers(AbstractLattice<T, ND, NQ_F>& f, AbstractLattice<T, ND, NQ_G>& g, float* buffers[], GridParameters& grid)
+{
+    int i_left = 0;
+    int i_rigt = grid.nx - 1;
+    int j_down = 0;
+    int j_upup = grid.ny - 1;
+
+    // Write f to left-right buffers.
+    for (int q = 0; q < NQ_F; ++q) {
+        for (int j = 0; j < grid.ny; ++j) {
+            buffers[0][q * grid.ny + j] = f.GetCurrFStar(q, i_rigt-1, 0, j); // bsend_rigt
+            buffers[1][q * grid.ny + j] = f.GetCurrFStar(q, i_left+1, 0, j); // brecv_left
+            buffers[2][q * grid.ny + j] = f.GetCurrFStar(q, i_left+1, 0, j); // bsend_left
+            buffers[3][q * grid.ny + j] = f.GetCurrFStar(q, i_rigt-1, 0, j); // brecv_rigt
+        }
+    }
+
+    // Write g to left-right buffers.
+    for (int q = 0; q < NQ_G; ++q) {
+        int qb = q + NQ_F;
+        for (int j = 0; j < grid.ny; ++j) {
+            buffers[0][qb * grid.ny + j] = g.GetCurrFStar(q, i_rigt-1, 0, j); // bsend_rigt
+            buffers[1][qb * grid.ny + j] = g.GetCurrFStar(q, i_left+1, 0, j); // brecv_left
+            buffers[2][qb * grid.ny + j] = g.GetCurrFStar(q, i_left+1, 0, j); // bsend_left
+            buffers[3][qb * grid.ny + j] = g.GetCurrFStar(q, i_rigt-1, 0, j); // brecv_rigt
+        }
+    }
+
+    // Write f to down-up buffers.
+    for (int q = 0; q < NQ_F; ++q) {
+        for (int i = 0; i < grid.nx; ++i) {
+            buffers[4][q * grid.nx + i] = f.GetCurrFStar(q, i, 0, j_upup-1); // bsend_upup
+            buffers[5][q * grid.nx + i] = f.GetCurrFStar(q, i, 0, j_down+1); // brecv_down
+            buffers[6][q * grid.nx + i] = f.GetCurrFStar(q, i, 0, j_down+1); // bsend_down
+            buffers[7][q * grid.nx + i] = f.GetCurrFStar(q, i, 0, j_upup-1); // brecv_upup
+        }
+    }
+
+    // Write g to down-up buffers.
+    for (int q = 0; q < NQ_G; ++q) {
+        int qb = q + NQ_F;
+        for (int i = 0; i < grid.nx; ++i) {
+            buffers[4][qb * grid.nx + i] = g.GetCurrFStar(q, i, 0, j_upup-1); // bsend_upup
+            buffers[5][qb * grid.nx + i] = g.GetCurrFStar(q, i, 0, j_down+1); // brecv_down
+            buffers[6][qb * grid.nx + i] = g.GetCurrFStar(q, i, 0, j_down+1); // bsend_down
+            buffers[7][qb * grid.nx + i] = g.GetCurrFStar(q, i, 0, j_upup-1); // brecv_upup
+        }
+    }
+}
+
+template <class T, int ND, int NQ_F, int NQ_G>
+void unpackBuffers(AbstractLattice<T, ND, NQ_F>& f, AbstractLattice<T, ND, NQ_G>& g, float* buffers[], GridParameters& grid)
+{
+    int i_left = 0;
+    int i_rigt = grid.nx - 1;
+    int j_down = 0;
+    int j_upup = grid.ny - 1;
+
+    // Write left-right buffers to f.
+    for (int q = 0; q < NQ_F; ++q) {
+        for (int j = 0; j < grid.ny; ++j) {
+            T b0 = buffers[0][q * grid.ny + j]; // bsend_rigt
+            f.SetCurrFStar(b0, q, i_rigt, 0, j);
+            
+            T b1 = buffers[1][q * grid.ny + j]; // brecv_left
+            f.SetCurrFStar(b1, q, i_left, 0, j);
+             
+            T b2 = buffers[2][q * grid.ny + j]; // bsend_left
+            f.SetCurrFStar(b2, q, i_left, 0, j);
+            
+            T b3 = buffers[3][q * grid.ny + j]; // brecv_rigt
+            f.SetCurrFStar(b3, q, i_rigt, 0, j);
+        }
+    }
+
+    // Write g to left-right buffers.
+    for (int q = 0; q < NQ_G; ++q) {
+        int qb = q + NQ_F;
+        for (int j = 0; j < grid.ny; ++j) {
+            T b0 = buffers[0][qb * grid.ny + j]; // bsend_rigt
+            g.SetCurrFStar(b0, q, i_rigt, 0, j);
+            
+            T b1 = buffers[1][qb * grid.ny + j]; // brecv_left
+            g.SetCurrFStar(b1, q, i_left, 0, j);
+             
+            T b2 = buffers[2][qb * grid.ny + j]; // bsend_left
+            g.SetCurrFStar(b2, q, i_left, 0, j);
+            
+            T b3 = buffers[3][qb * grid.ny + j]; // brecv_rigt
+            g.SetCurrFStar(b3, q, i_rigt, 0, j);
+        }
+    }
+
+    // Write f to down-up buffers.
+    for (int q = 0; q < NQ_F; ++q) {
+        for (int i = 0; i < grid.nx; ++i) {
+            // T b0 = buffers[4][q * grid.nx + i]; // bsend_upup
+            // f.SetCurrFStar(b0, q, i, 0, j_upup);
+
+            if (!grid.isBottom) {
+                T b1 = buffers[5][q * grid.nx + i]; // brecv_down
+                f.SetCurrFStar(b1, q, i, 0, j_down);
+            }
+            
+            // T b2 = buffers[6][q * grid.nx + i]; // bsend_down
+            // f.SetCurrFStar(b2, q, i, 0, j_down);
+            
+            if (!grid.isTop) {
+                T b3 = buffers[7][q * grid.nx + i]; // brecv_upup
+                f.SetCurrFStar(b3, q, i, 0, j_upup);
+            }
+        }
+    }
+
+    // Write g to down-up buffers.
+    for (int q = 0; q < NQ_G; ++q) {
+        int qb = q + NQ_F;
+        for (int i = 0; i < grid.nx; ++i) {
+            // T b0 = buffers[4][qb * grid.nx + i]; // bsend_upup
+            // g.SetCurrFStar(b0, q, i, 0, j_upup);
+
+            if (!grid.isBottom) {
+                std::cout << "writing to bottom buffer\n";
+                T b1 = buffers[5][qb * grid.nx + i]; // brecv_down
+                g.SetCurrFStar(b1, q, i, 0, j_down);
+            }
+            
+            // T b2 = buffers[6][qb * grid.nx + i]; // bsend_down
+            // g.SetCurrFStar(b2, q, i, 0, j_down);
+            
+            if (!grid.isTop) {
+                T b3 = buffers[7][qb * grid.nx + i]; // brecv_upup
+                g.SetCurrFStar(b3, q, i, 0, j_upup);
+            }
+        }
+    }
 }
