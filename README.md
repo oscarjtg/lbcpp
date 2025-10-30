@@ -1,4 +1,7 @@
 # lbcpp
+
+![CI](https://github.com/oscarjtg/lbcpp/actions/workflows/ci.yml/badge.svg)
+
 A C++ template library for constructing models of fluid flow with active tracers using the lattice Boltzmann method.
 
 ## Installation instructions
