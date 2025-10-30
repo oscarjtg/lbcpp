@@ -1,0 +1,73 @@
+name: CI — Build & Test
+
+# Run on pushes and PRs to main (adjust branches as needed)
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  # optional nightly run (uncomment to enable)
+  # schedule:
+  #   - cron: '0 0 * * *'  # every day at 00:00 UTC
+
+jobs:
+  build-and-test:
+    name: Build & Test (Ubuntu)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up APT packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake g++ make libgtest-dev
+
+      - name: Build system Google Test libraries
+        # On Ubuntu libgtest-dev provides sources at /usr/src/gtest; build static libs
+        run: |
+          if [ -d /usr/src/gtest ]; then
+            cd /usr/src/gtest
+            sudo cmake CMakeLists.txt
+            sudo make
+            # copy static libs to system library path so linker can find -lgtest -lgtest_main
+            sudo cp -v *.a /usr/lib || true
+          else
+            echo "/usr/src/gtest not found — skipping build (libgtest-dev may not be installed)"
+            exit 1
+          fi
+
+      - name: Build project (make)
+        # rely on your repo Makefile to build objects and the test binary
+        run: |
+          make -j$(nproc)
+
+      - name: Run tests and produce gtest XML report
+        # Adjust path to test binary if different; this runs the test binary with gtest XML output
+        run: |
+          TEST_BIN=./bin/test_equilibria
+          if [ ! -x "$TEST_BIN" ]; then
+            echo "Test binary $TEST_BIN not found or not executable"
+            ls -l bin || true
+            exit 1
+          fi
+          mkdir -p test-results
+          # Emit JUnit-style XML that Actions/test viewers understand
+          $TEST_BIN --gtest_output=xml:test-results/junit.xml
+        # keep failure semantics default: nonzero exit -> job fails
+
+      - name: Upload test-report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gtest-report
+          path: test-results/junit.xml
+
+      - name: Show brief test-results summary (if available)
+        if: always()
+        run: |
+          echo "=== test-results directory ==="
+          ls -la test-results || true
+          echo "=== end summary ==="
